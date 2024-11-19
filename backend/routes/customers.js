@@ -1,10 +1,10 @@
-const express = require('express');
-const pool = require('../config/db');
-const bcrypt = require('bcryptjs');
-// Removed JWT import and authentication
-// const jwt = require('jsonwebtoken');
+// Import statements using ES modules
+import express from 'express';
+import pool from '../config/db.js';
+import bcrypt from 'bcryptjs';
 
-const router = require('express').Router();
+const router = express.Router();
+
 // Fetch all customers
 router.get('/', async (req, res) => {
     try {
@@ -15,7 +15,7 @@ router.get('/', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch customers' });
     }
 });
-    
+
 // Customer Signup
 router.post('/signup', async (req, res) => {
     const { f_name, l_name, email, phone, pass, cnic, u_name } = req.body;
@@ -35,7 +35,6 @@ router.post('/signup', async (req, res) => {
             'INSERT INTO Accounts (cust_id, acc_no, balance) VALUES ($1, $2, $3)',
             [newCustomer.rows[0].cust_id, accountNumber, 0]
         );
-
 
         await client.query('COMMIT');
         res.status(201).json({ message: 'Signup successful', cust_id: newCustomer.rows[0].cust_id });
@@ -158,6 +157,7 @@ router.post('/admin/add-money', async (req, res) => {
         res.status(500).json({ message: 'Failed to add money' });
     }
 });
+
 // Fetch All Transactions (Admin Only)
 router.get('/admin/transactions', async (req, res) => {
     try {
@@ -179,6 +179,7 @@ router.get('/admin/customers', async (req, res) => {
         res.status(500).json({ error: 'Failed to fetch customers' });
     }
 });
+
 // Fetch Customer Profile Details
 router.get('/profile', async (req, res) => {
     try {
@@ -196,6 +197,7 @@ router.get('/profile', async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch profile details' });
     }
 });
+
 // Fetch Customer Transactions
 router.get('/transactions', async (req, res) => {
     const { cust_id } = req.query;
@@ -219,8 +221,8 @@ router.get('/transactions', async (req, res) => {
         res.status(500).json({ message: 'Failed to fetch transactions' });
     }
 });
-// Updated customer.js
-// Updated /transfer endpoint in customer.js
+
+// Transfer endpoint
 router.post('/transfer', async (req, res) => {
     console.log('Incoming request body:', req.body);
 
@@ -303,4 +305,5 @@ router.post('/transfer', async (req, res) => {
         client.release();
     }
 });
-    module.exports = router;
+
+export default router;

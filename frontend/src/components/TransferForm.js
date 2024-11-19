@@ -1,6 +1,8 @@
+// frontend/src/components/TransferForm.js
+
 import React, { useState, useContext } from 'react';
 import axios from 'axios';
-import { UserContext } from '../contexts/UserContext';  // Assuming you store user context here
+import { UserContext } from '../contexts/UserContext';  // Ensure the path is correct
 
 const TransferForm = () => {
     const [receiverId, setReceiverId] = useState('');
@@ -9,14 +11,19 @@ const TransferForm = () => {
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
     
-    // Suppose you have a context that provides the logged-in user's details
+    // Assuming UserContext provides the logged-in user's details
     const { user } = useContext(UserContext);
-    const senderId = user.cust_id;  // This needs to be correctly retrieved from context or props
+    const senderId = user?.cust_id;  // Safeguard in case user is undefined
 
     const handleTransfer = async (e) => {
         e.preventDefault();
         setMessage('');
         setError('');
+
+        if (!senderId) {
+            setError('User not authenticated.');
+            return;
+        }
 
         if (!receiverId || parseFloat(amount) <= 0) {
             setError('Receiver ID and valid amount are required.');
@@ -26,7 +33,7 @@ const TransferForm = () => {
         setLoading(true);
         try {
             const response = await axios.post('http://localhost:5000/api/customers/transfer', {
-                sender_id: senderId, // Use context or passed-down prop for sender ID
+                sender_id: senderId,
                 receiver_account: receiverId,
                 amount: parseFloat(amount),
             });
@@ -47,9 +54,10 @@ const TransferForm = () => {
             <h2>Money Transfer</h2>
             <form onSubmit={handleTransfer}>
                 <div>
-                    <label>Receiver ID:</label>
+                    <label htmlFor="receiverId">Receiver ID:</label>
                     <input
                         type="text"
+                        id="receiverId"
                         placeholder="Enter Receiver ID"
                         value={receiverId}
                         onChange={(e) => setReceiverId(e.target.value)}
@@ -57,13 +65,15 @@ const TransferForm = () => {
                     />
                 </div>
                 <div>
-                    <label>Amount:</label>
+                    <label htmlFor="amount">Amount:</label>
                     <input
                         type="number"
+                        id="amount"
                         placeholder="Enter Amount"
                         value={amount}
                         onChange={(e) => setAmount(e.target.value)}
                         required
+                        min="1"
                     />
                 </div>
                 <button type="submit" disabled={loading}>

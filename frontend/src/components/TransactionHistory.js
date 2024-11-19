@@ -1,6 +1,9 @@
+// frontend/src/components/TransactionHistory.js
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
+import PropTypes from 'prop-types';
 
 const TransactionHistory = ({ customerId }) => {
     const [transactions, setTransactions] = useState([]);
@@ -10,7 +13,7 @@ const TransactionHistory = ({ customerId }) => {
     useEffect(() => {
         const fetchTransactions = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/customers/transactions`, {
+                const response = await axios.get('http://localhost:5000/api/customers/transactions', {
                     params: { cust_id: customerId },
                 });
                 setTransactions(response.data);
@@ -58,6 +61,10 @@ const TransactionHistory = ({ customerId }) => {
             )}
         </div>
     );
+};
+
+TransactionHistory.propTypes = {
+    customerId: PropTypes.number.isRequired,
 };
 
 export default TransactionHistory;

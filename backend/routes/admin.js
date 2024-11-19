@@ -1,5 +1,6 @@
-const express = require('express');
-const pool = require('../config/db');
+// Import statements using ES modules
+import express from 'express';
+import pool from '../config/db.js'; // Include the .js extension for ES modules
 
 const router = express.Router();
 
@@ -35,6 +36,7 @@ router.post('/add-money', async (req, res) => {
         res.status(500).json({ message: 'Failed to add money' });
     }
 });
+
 // Admin-only route to fetch all transactions
 router.get('/transactions', async (req, res) => {
     try {
@@ -57,4 +59,4 @@ router.get('/customers', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;
