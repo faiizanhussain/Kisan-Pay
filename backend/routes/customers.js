@@ -49,7 +49,6 @@ router.post('/signup', async (req, res) => {
 });
 
 // Customer Login (no token)
-// Customer Login
 router.post('/login', async (req, res) => {
     const { email, password } = req.body;
 
@@ -66,8 +65,11 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Incorrect password' });
         }
 
-        // Return role (customer or admin)
-        res.status(200).json({ message: 'Login successful', role: user.rows[0].role });
+        // Return role and cust_id
+        res.status(200).json({
+            role: user.rows[0].role,
+            cust_id: user.rows[0].cust_id,
+        });
     } catch (err) {
         console.error('Error during login:', err.message);
         res.status(500).json({ message: 'Server error' });
@@ -76,12 +78,14 @@ router.post('/login', async (req, res) => {
 
 // Fetch Customer Balance (no token)
 router.get('/balance', async (req, res) => {
+    const { cust_id } = req.query;
+
+    if (!cust_id || isNaN(cust_id)) {
+        return res.status(400).json({ message: 'Invalid or missing Customer ID' });
+    }
+
     try {
-        const { cust_id } = req.query;
-        if (!cust_id) {
-            return res.status(400).json({ message: 'Customer ID is required' });
-        }
-        const account = await pool.query('SELECT balance FROM Accounts WHERE cust_id = $1', [cust_id]);
+        const account = await pool.query('SELECT balance FROM Accounts WHERE cust_id = $1', [parseInt(cust_id)]);
         if (account.rows.length === 0) {
             return res.status(404).json({ message: 'Account not found' });
         }
@@ -94,27 +98,24 @@ router.get('/balance', async (req, res) => {
 
 // Create Customer Account (no token)
 router.post('/create-account', async (req, res) => {
-    const { cust_id } = req.body; // Expecting cust_id from request body (as no token authentication)
+    const { cust_id } = req.body;
 
-    if (!cust_id) {
-        return res.status(400).json({ message: 'Customer ID is required' });
+    if (!cust_id || isNaN(cust_id)) {
+        return res.status(400).json({ message: 'Invalid or missing Customer ID' });
     }
 
     try {
-        // Check if the account already exists
-        const existingAccount = await pool.query('SELECT * FROM Accounts WHERE cust_id = $1', [cust_id]);
+        const existingAccount = await pool.query('SELECT * FROM Accounts WHERE cust_id = $1', [parseInt(cust_id)]);
 
         if (existingAccount.rows.length > 0) {
             return res.status(400).json({ message: 'Account already exists' });
         }
 
-        // Generate a unique numeric account number
-        const accountNumber = Math.floor(100000000000 + Math.random() * 900000000000); // Generate a 12-digit number
+        const accountNumber = Math.floor(100000000000 + Math.random() * 900000000000);
 
-        // Create the account
         const newAccount = await pool.query(
             'INSERT INTO Accounts (cust_id, acc_no, balance) VALUES ($1, $2, $3) RETURNING *',
-            [cust_id, accountNumber, 0]
+            [parseInt(cust_id), accountNumber, 0]
         );
 
         res.status(201).json({
@@ -197,21 +198,109 @@ router.get('/profile', async (req, res) => {
 });
 // Fetch Customer Transactions
 router.get('/transactions', async (req, res) => {
+    const { cust_id } = req.query;
+
+    if (!cust_id) {
+        return res.status(400).json({ message: 'Customer ID is required' });
+    }
+
     try {
-        const { cust_id } = req.query;
-        if (!cust_id) {
-            return res.status(400).json({ message: 'Customer ID is required' });
-        }
         const transactions = await pool.query(
-            'SELECT * FROM Transactions WHERE sender_id = $1 OR receiver_id = $1 ORDER BY date_time DESC',
+            `SELECT transaction_id, sender_id, receiver_id, amount, date_time 
+             FROM Transactions 
+             WHERE sender_id = $1 OR receiver_id = $1 
+             ORDER BY date_time DESC`,
             [cust_id]
         );
+
         res.json(transactions.rows);
     } catch (err) {
         console.error('Error fetching transactions:', err.message);
         res.status(500).json({ message: 'Failed to fetch transactions' });
     }
 });
+// Updated customer.js
+// Updated /transfer endpoint in customer.js
+router.post('/transfer', async (req, res) => {
+    console.log('Incoming request body:', req.body);
 
+    const { sender_id, receiver_account, amount } = req.body;
 
-module.exports = router;
+    // Input validation
+    if (!sender_id || isNaN(sender_id)) {
+        console.error('Invalid sender ID:', sender_id);
+        return res.status(400).json({ message: 'Invalid sender ID' });
+    }
+    if (!receiver_account || isNaN(receiver_account)) {
+        console.error('Invalid receiver account:', receiver_account);
+        return res.status(400).json({ message: 'Invalid receiver account' });
+    }
+    if (!amount || isNaN(amount) || amount <= 0) {
+        console.error('Invalid transfer amount:', amount);
+        return res.status(400).json({ message: 'Invalid transfer amount' });
+    }
+
+    console.log('Validated request data:', { sender_id, receiver_account, amount });
+
+    const client = await pool.connect();
+
+    try {
+        await client.query('BEGIN');
+
+        // Check sender account
+        const senderAccount = await client.query(
+            'SELECT balance FROM Accounts WHERE cust_id = $1',
+            [parseInt(sender_id)]
+        );
+
+        if (senderAccount.rows.length === 0) {
+            console.error('Sender account not found:', sender_id);
+            throw new Error('Sender account not found');
+        }
+
+        if (senderAccount.rows[0].balance < amount) {
+            console.error('Insufficient balance:', senderAccount.rows[0].balance);
+            throw new Error('Insufficient balance');
+        }
+
+        // Check receiver account
+        const receiverAccount = await client.query(
+            'SELECT cust_id FROM Accounts WHERE acc_no = $1',
+            [parseInt(receiver_account)]
+        );
+
+        if (receiverAccount.rows.length === 0) {
+            console.error('Receiver account not found:', receiver_account);
+            throw new Error('Receiver account not found');
+        }
+
+        // Deduct amount from sender
+        await client.query(
+            'UPDATE Accounts SET balance = balance - $1 WHERE cust_id = $2',
+            [parseFloat(amount), parseInt(sender_id)]
+        );
+
+        // Add amount to receiver
+        await client.query(
+            'UPDATE Accounts SET balance = balance + $1 WHERE acc_no = $2',
+            [parseFloat(amount), parseInt(receiver_account)]
+        );
+
+        // Log the transaction
+        await client.query(
+            'INSERT INTO Transactions (sender_id, receiver_id, amount, date_time) VALUES ($1, $2, $3, NOW())',
+            [parseInt(sender_id), parseInt(receiver_account), parseFloat(amount)]
+        );
+
+        await client.query('COMMIT');
+        console.log('Transfer successful');
+        res.status(200).json({ message: 'Transfer successful' });
+    } catch (err) {
+        await client.query('ROLLBACK');
+        console.error('Error during transfer:', err.message);
+        res.status(500).json({ message: err.message || 'Transfer failed' });
+    } finally {
+        client.release();
+    }
+});
+    module.exports = router;

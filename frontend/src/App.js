@@ -20,18 +20,17 @@ const App = () => {
                 <Route path="/about" element={<About />} />
                 <Route path="/signup" element={<SignUp />} />
                 <Route path="/login" element={<Login />} />
-                
+
                 {/* Protected Customer Dashboard Route */}
                 <Route
                     path="/customers"
-                    element={role === 'customer' ? <CustomerDashboard /> : <Navigate to="/login" />}
+                    element={localStorage.getItem('role') === 'customer' ? <CustomerDashboard /> : <Navigate to="/login" />}
                 />
-
-                {/* Protected Admin Dashboard Route */}
                 <Route
                     path="/admin-dashboard"
-                    element={role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" />}
+                    element={localStorage.getItem('role') === 'admin' ? <AdminDashboard /> : <Navigate to="/login" />}
                 />
+
             </Routes>
         </Router>
     );

@@ -21,14 +21,26 @@ const Login = () => {
         }
 
         try {
+            // Send login request to the backend
             const response = await axios.post('http://localhost:5000/api/customers/login', {
                 email,
                 password,
             });
 
-            const { role } = response.data;
-            localStorage.setItem('role', role);
+            // Extract role and cust_id from the response
+            const { role, cust_id } = response.data;
 
+            // Ensure both role and cust_id are returned
+            if (!role || !cust_id) {
+                throw new Error('Login failed: Missing role or cust_id');
+            }
+
+            // Save role and cust_id to localStorage
+            localStorage.setItem('role', role);
+            localStorage.setItem('cust_id', response.data.cust_id);
+
+
+            // Navigate to the appropriate dashboard
             navigate(role === 'admin' ? '/admin-dashboard' : '/customers');
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed');

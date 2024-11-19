@@ -1,43 +1,42 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
 import axios from 'axios';
+import { UserContext } from '../contexts/UserContext';  // Assuming you store user context here
 
-const TransferForm = ({ customerId }) => {
+const TransferForm = () => {
     const [receiverId, setReceiverId] = useState('');
     const [amount, setAmount] = useState('');
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
     const [loading, setLoading] = useState(false);
+    
+    // Suppose you have a context that provides the logged-in user's details
+    const { user } = useContext(UserContext);
+    const senderId = user.cust_id;  // This needs to be correctly retrieved from context or props
 
     const handleTransfer = async (e) => {
         e.preventDefault();
         setMessage('');
         setError('');
 
-        if (!receiverId) {
-            setError('Receiver ID is required.');
-            return;
-        }
-        if (parseFloat(amount) <= 0) {
-            setError('Amount must be greater than zero.');
-            return;
-        }
-
-        if (!window.confirm(`Are you sure you want to transfer $${amount} to Receiver ID ${receiverId}?`)) {
+        if (!receiverId || parseFloat(amount) <= 0) {
+            setError('Receiver ID and valid amount are required.');
             return;
         }
 
         setLoading(true);
         try {
             const response = await axios.post('http://localhost:5000/api/customers/transfer', {
-                sender_id: customerId,
-                receiver_id: receiverId,
+                sender_id: senderId, // Use context or passed-down prop for sender ID
+                receiver_account: receiverId,
                 amount: parseFloat(amount),
             });
+
             setMessage(response.data.message);
             setReceiverId('');
             setAmount('');
         } catch (err) {
-            setError(err.response?.data?.message || 'An error occurred');
+            setError(err.response?.data?.message || 'An error occurred during the transfer');
+            console.error('Error during transfer:', err);
         } finally {
             setLoading(false);
         }

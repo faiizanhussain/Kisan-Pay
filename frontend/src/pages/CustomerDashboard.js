@@ -24,13 +24,17 @@ const CustomerDashboard = () => {
 
         const fetchAccountData = async () => {
             try {
-                const cust_id = localStorage.getItem('cust_id'); // Retrieve from localStorage
+                const cust_id = localStorage.getItem('cust_id'); // Retrieve customer ID
                 if (!cust_id) {
-                    throw new Error('Customer ID not found');
+                    alert('Customer ID not found. Please log in again.');
+                    navigate('/login'); // Redirect to login if `cust_id` is missing
+                    return;
                 }
-        
+                console.log('Retrieved cust_id from localStorage:', cust_id);
+
+
                 console.log('Customer ID:', cust_id);
-        
+
                 // Fetch balance
                 const balanceResponse = await axios.get('http://localhost:5000/api/customers/balance', {
                     params: { cust_id },
@@ -38,21 +42,21 @@ const CustomerDashboard = () => {
                 console.log('Balance Response:', balanceResponse.data);
                 setBalance(balanceResponse.data.balance);
                 setAccountExists(true); // Mark account as existing if balance is fetched
-        
+
                 // Fetch transactions
                 const transactionsResponse = await axios.get('http://localhost:5000/api/customers/transactions', {
                     params: { cust_id },
                 });
                 console.log('Transactions Response:', transactionsResponse.data);
                 setTransactions(transactionsResponse.data);
-        
+
                 // Fetch profile details
                 const profileResponse = await axios.get('http://localhost:5000/api/customers/profile', {
                     params: { cust_id },
                 });
                 console.log('Profile Response:', profileResponse.data);
                 setProfile(profileResponse.data);
-        
+
                 setLoading(false); // Mark loading as complete
             } catch (err) {
                 console.error('Error in fetchAccountData:', err.message || err.response?.data?.message);
@@ -60,19 +64,20 @@ const CustomerDashboard = () => {
                 setLoading(false);
             }
         };
-        
+
 
         fetchAccountData();
     }, [navigate]);
 
     const handleCreateAccount = async () => {
-        const cust_id = localStorage.getItem('cust_id'); // Retrieve the customer ID
-
+        const cust_id = localStorage.getItem('cust_id');
+    
         if (!cust_id) {
-            alert('Customer ID is required. Please sign up again.');
+            alert('Customer ID is missing. Please log in again.');
+            navigate('/login');
             return;
         }
-
+    
         try {
             const response = await axios.post('http://localhost:5000/api/customers/create-account', { cust_id });
             alert(response.data.message);
@@ -83,6 +88,7 @@ const CustomerDashboard = () => {
             alert(err.response?.data?.message || 'Failed to create account');
         }
     };
+    
 
     const handleTransfer = async (e) => {
         e.preventDefault();

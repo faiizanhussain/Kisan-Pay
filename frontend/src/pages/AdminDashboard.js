@@ -41,24 +41,25 @@ const AdminDashboard = () => {
 
     const handleAddMoney = async (e) => {
         e.preventDefault();
-
-        console.log('Add Money Request:', { custId, amount }); // Debug log
-
+    
+        console.log('Add Money Request:', { custId, amount });
+    
         try {
             const response = await axios.post('http://localhost:5000/api/admin/add-money', {
-                custId,
-                amount,
+                cust_id: parseInt(custId), // Ensure cust_id is sent as an integer
+                amount: parseFloat(amount), // Ensure amount is parsed as a float
             });
-
+    
             alert(response.data.message);
             setCustId('');
             setAmount('');
+            setMessage('');
         } catch (err) {
             console.error('Error adding money:', err.response?.data?.message || err.message);
-            alert(err.response?.data?.message || 'Failed to add money');
+            setError(err.response?.data?.message || 'Failed to add money');
         }
     };
-
+    
 
     if (loading) return <p>Loading...</p>;
 

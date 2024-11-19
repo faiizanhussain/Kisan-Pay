@@ -10,7 +10,9 @@ const TransactionHistory = ({ customerId }) => {
     useEffect(() => {
         const fetchTransactions = async () => {
             try {
-                const response = await axios.get(`http://localhost:5000/api/customers/${customerId}/transactions`);
+                const response = await axios.get(`http://localhost:5000/api/customers/transactions`, {
+                    params: { cust_id: customerId },
+                });
                 setTransactions(response.data);
                 setError('');
             } catch (err) {
@@ -38,6 +40,7 @@ const TransactionHistory = ({ customerId }) => {
                         <tr>
                             <th>Date</th>
                             <th>Type</th>
+                            <th>Receiver</th>
                             <th>Amount</th>
                         </tr>
                     </thead>
@@ -46,7 +49,8 @@ const TransactionHistory = ({ customerId }) => {
                             <tr key={transaction.transaction_id}>
                                 <td>{format(new Date(transaction.date_time), 'MMM dd, yyyy HH:mm')}</td>
                                 <td>{transaction.sender_id === customerId ? 'Sent' : 'Received'}</td>
-                                <td>{transaction.amount} USD</td>
+                                <td>{transaction.receiver_id}</td>
+                                <td>{transaction.amount} PKR</td>
                             </tr>
                         ))}
                     </tbody>
