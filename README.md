@@ -31,3 +31,16 @@
 cd ../frontend
 npm install
 npm start (for starting frontend server)
+
+# NOTE:
+
+## run this command :
+  `npm install` before executing
+
+## use `node --watch app.js` instead of nodemon
+
+## edit your own correct database url in `backend/config/.env`
+  because i have edited on my own according to databse
+
+# Most Important:
+  ## REFRESH after you logout from one role and then if you want to login in another role
