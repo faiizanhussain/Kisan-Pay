@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Home from './pages/Home';
 import About from './pages/About';
@@ -9,8 +9,19 @@ import AdminDashboard from './pages/AdminDashboard';
 import SignUp from './pages/SignUp';
 
 const App = () => {
-    // Fetch role from localStorage
-    const role = localStorage.getItem('role');
+    const [role, setRole] = useState(localStorage.getItem('role'));
+
+    // Update the state whenever localStorage changes
+    useEffect(() => {
+        const updateRole = () => {
+            setRole(localStorage.getItem('role'));
+        };
+
+        window.addEventListener('storage', updateRole);
+        return () => {
+            window.removeEventListener('storage', updateRole);
+        };
+    }, []);
 
     return (
         <Router>
@@ -24,13 +35,16 @@ const App = () => {
                 {/* Protected Customer Dashboard Route */}
                 <Route
                     path="/customers"
-                    element={localStorage.getItem('role') === 'customer' ? <CustomerDashboard /> : <Navigate to="/login" />}
+                    element={
+                        role === 'customer' ? <CustomerDashboard /> : <Navigate to="/login" />
+                    }
                 />
                 <Route
                     path="/admin-dashboard"
-                    element={localStorage.getItem('role') === 'admin' ? <AdminDashboard /> : <Navigate to="/login" />}
+                    element={
+                        role === 'admin' ? <AdminDashboard /> : <Navigate to="/login" />
+                    }
                 />
-
             </Routes>
         </Router>
     );

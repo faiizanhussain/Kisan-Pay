@@ -127,36 +127,36 @@ router.post('/create-account', async (req, res) => {
     }
 });
 
-// Add Money to Account (Admin Only)
-router.post('/admin/add-money', async (req, res) => {
-    const { cust_id, amount } = req.body;
-
-    console.log('Received Add Money Request:', { cust_id, amount });
+// Customer Login (plain-text password)
+router.post('/login', async (req, res) => {
+    const { email, password } = req.body;
 
     try {
-        if (!cust_id || !amount || amount <= 0) {
-            console.log('Invalid Input:', { cust_id, amount });
-            return res.status(400).json({ message: 'Invalid input' });
+        // Fetch user by email
+        const userResult = await pool.query('SELECT * FROM Customers WHERE email = $1', [email]);
+
+        if (userResult.rows.length === 0) {
+            return res.status(404).json({ message: 'User not found' });
         }
 
-        const updatedAccount = await pool.query(
-            'UPDATE Accounts SET balance = balance + $1 WHERE cust_id = $2 RETURNING *',
-            [amount, cust_id]
-        );
+        const user = userResult.rows[0];
 
-        console.log('Update Query Result:', updatedAccount.rows);
-
-        if (updatedAccount.rows.length === 0) {
-            console.log('Account Not Found for cust_id:', cust_id);
-            return res.status(404).json({ message: 'Account not found' });
+        // Check if the provided password matches the one stored in the database
+        if (user.pass !== password) {
+            return res.status(401).json({ message: 'Incorrect password' });
         }
 
-        res.json({ message: 'Money added successfully', account: updatedAccount.rows[0] });
+        // Return role and cust_id to be used in the frontend
+        res.status(200).json({
+            role: user.role,  // Ensure the role is either "customer" or "admin"
+            cust_id: user.cust_id,
+        });
     } catch (err) {
-        console.error('Error in /admin/add-money:', err.message);
-        res.status(500).json({ message: 'Failed to add money' });
+        console.error('Error during login:', err.message);
+        res.status(500).json({ message: 'Server error' });
     }
 });
+
 
 // Fetch All Transactions (Admin Only)
 router.get('/admin/transactions', async (req, res) => {
