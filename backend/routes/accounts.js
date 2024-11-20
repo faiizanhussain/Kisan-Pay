@@ -1,5 +1,6 @@
-const express = require('express');
-const pool = require('../config/db');
+// Import statements using ES modules
+import express from 'express';
+import pool from '../config/db.js'; // Include the .js extension for ES modules
 
 const router = express.Router();
 
@@ -73,4 +74,4 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;

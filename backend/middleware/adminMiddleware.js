@@ -1,3 +1,5 @@
+// adminMiddleware.js
+
 const adminMiddleware = (req, res, next) => {
     // Check if the role is passed in the request body or query params
     const role = req.body.role || req.query.role;
@@ -9,4 +11,4 @@ const adminMiddleware = (req, res, next) => {
     next();
 };
 
-module.exports = adminMiddleware;
+export default adminMiddleware;

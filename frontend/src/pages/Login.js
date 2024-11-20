@@ -30,20 +30,24 @@ const Login = () => {
             // Extract role and cust_id from the response
             const { role, cust_id } = response.data;
 
-            // Ensure both role and cust_id are returned
-            if (!role || !cust_id) {
-                throw new Error('Login failed: Missing role or cust_id');
-            }
+            // Debugging logs
+            console.log('Role:', role, 'Customer ID:', cust_id);
 
             // Save role and cust_id to localStorage
             localStorage.setItem('role', role);
-            localStorage.setItem('cust_id', response.data.cust_id);
-
+            localStorage.setItem('cust_id', cust_id);
 
             // Navigate to the appropriate dashboard
-            navigate(role === 'admin' ? '/admin-dashboard' : '/customers');
+            if (role === 'admin') {
+                navigate('/admin-dashboard');
+            } else if (role === 'customer') {
+                navigate('/customers');
+            } else {
+                throw new Error('Invalid role received');
+            }
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed');
+            console.error('Login error:', err);
         } finally {
             setLoading(false);
         }

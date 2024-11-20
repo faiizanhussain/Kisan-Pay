@@ -1,5 +1,6 @@
-const express = require('express');
-const pool = require('../config/db');
+// Import statements using ES modules
+import express from 'express';
+import pool from '../config/db.js';
 
 const router = express.Router();
 
@@ -63,7 +64,10 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
     const { id } = req.params;
     try {
-        const deletedManager = await pool.query('DELETE FROM Manager WHERE employee_id = $1 RETURNING *', [id]);
+        const deletedManager = await pool.query(
+            'DELETE FROM Manager WHERE employee_id = $1 RETURNING *',
+            [id]
+        );
         if (deletedManager.rows.length === 0) {
             return res.status(404).json({ message: 'Manager not found' });
         }
@@ -73,4 +77,4 @@ router.delete('/:id', async (req, res) => {
     }
 });
 
-module.exports = router;
+export default router;
