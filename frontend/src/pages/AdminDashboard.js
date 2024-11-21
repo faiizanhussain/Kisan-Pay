@@ -5,35 +5,30 @@ import { format } from 'date-fns';
 const AdminDashboard = () => {
     const [custId, setCustId] = useState('');
     const [amount, setAmount] = useState('');
-    const [message, setMessage] = useState('');
-    const [error, setError] = useState('');
     const [transactions, setTransactions] = useState([]);
     const [customers, setCustomers] = useState([]);
+    const [loans, setLoans] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState('');
 
     useEffect(() => {
-        const fetchTransactions = async () => {
-            try {
-                const response = await axios.get('http://localhost:5000/api/customers/admin/transactions');
-                setTransactions(response.data);
-            } catch (err) {
-                console.error('Error fetching transactions:', err.message);
-            }
-        };
-
-        const fetchCustomers = async () => {
-            try {
-                const response = await axios.get('http://localhost:5000/api/customers/admin/customers');
-                setCustomers(response.data);
-            } catch (err) {
-                console.error('Error fetching customers:', err.message);
-            }
-        };
-
         const fetchData = async () => {
-            setLoading(true);
-            await Promise.all([fetchTransactions(), fetchCustomers()]);
-            setLoading(false);
+            try {
+                setLoading(true);
+                const [transactionRes, customerRes, loanRes] = await Promise.all([
+                    axios.get('http://localhost:5000/api/customers/admin/transactions'),
+                    axios.get('http://localhost:5000/api/customers/admin/customers'),
+                    axios.get('http://localhost:5000/api/loans'),
+                ]);
+                setTransactions(transactionRes.data);
+                setCustomers(customerRes.data);
+                setLoans(loanRes.data);
+            } catch (err) {
+                console.error('Error fetching data:', err.message);
+                setError('Failed to load data.');
+            } finally {
+                setLoading(false);
+            }
         };
 
         fetchData();
@@ -41,52 +36,54 @@ const AdminDashboard = () => {
 
     const handleAddMoney = async (e) => {
         e.preventDefault();
-    
-        console.log('Add Money Request:', { custId, amount });
-    
         try {
             const response = await axios.post('http://localhost:5000/api/admin/add-money', {
-                cust_id: parseInt(custId), // Ensure cust_id is sent as an integer
-                amount: parseFloat(amount), // Ensure amount is parsed as a float
+                cust_id: parseInt(custId),
+                amount: parseFloat(amount),
             });
-    
             alert(response.data.message);
             setCustId('');
             setAmount('');
-            setMessage('');
         } catch (err) {
-            console.error('Error adding money:', err.response?.data?.message || err.message);
-            setError(err.response?.data?.message || 'Failed to add money');
+            alert('Failed to add money.');
         }
     };
-    
+
+    const handleLoanApproval = async (loanId, status) => {
+        try {
+            await axios.put(`http://localhost:5000/api/loans/${loanId}/${status}`);
+            alert(`Loan ${status} successfully!`);
+            setLoans(loans.map((loan) => (loan.loan_id === loanId ? { ...loan, status } : loan)));
+        } catch (err) {
+            alert('Failed to update loan status.');
+        }
+    };
 
     if (loading) return <p>Loading...</p>;
+    if (error) return <p>{error}</p>;
 
     return (
         <div>
             <h1>Admin Dashboard</h1>
+
             <h2>Add Money to Customer Account</h2>
             <form onSubmit={handleAddMoney}>
                 <input
                     type="text"
                     placeholder="Customer ID"
                     value={custId}
-                    onChange={(e) => setCustId(e.target.value)} // Update the state
+                    onChange={(e) => setCustId(e.target.value)}
                     required
                 />
                 <input
                     type="number"
                     placeholder="Amount (PKR)"
                     value={amount}
-                    onChange={(e) => setAmount(e.target.value)} // Update the state
+                    onChange={(e) => setAmount(e.target.value)}
                     required
                 />
-
                 <button type="submit">Add Money</button>
             </form>
-            {message && <p style={{ color: 'green' }}>{message}</p>}
-            {error && <p style={{ color: 'red' }}>{error}</p>}
 
             <h2>All Transactions</h2>
             <table>
@@ -112,23 +109,36 @@ const AdminDashboard = () => {
                 </tbody>
             </table>
 
-            <h2>All Customers</h2>
+            <h2>Loan Requests</h2>
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
-                        <th>Name</th>
-                        <th>Email</th>
-                        <th>Phone</th>
+                        <th>Loan ID</th>
+                        <th>Account Number</th>
+                        <th>Amount</th>
+                        <th>Status</th>
+                        <th>Actions</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {customers.map((customer) => (
-                        <tr key={customer.cust_id}>
-                            <td>{customer.cust_id}</td>
-                            <td>{`${customer.f_name} ${customer.l_name}`}</td>
-                            <td>{customer.email}</td>
-                            <td>{customer.phone}</td>
+                    {loans.map((loan) => (
+                        <tr key={loan.loan_id}>
+                            <td>{loan.loan_id}</td>
+                            <td>{loan.acc_no}</td>
+                            <td>{loan.loan_amt} PKR</td>
+                            <td>{loan.status || 'Pending'}</td>
+                            <td>
+                                {loan.status === 'pending' && (
+                                    <>
+                                        <button onClick={() => handleLoanApproval(loan.loan_id, 'approve')}>
+                                            Approve
+                                        </button>
+                                        <button onClick={() => handleLoanApproval(loan.loan_id, 'reject')}>
+                                            Reject
+                                        </button>
+                                    </>
+                                )}
+                            </td>
                         </tr>
                     ))}
                 </tbody>

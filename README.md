@@ -42,5 +42,6 @@ npm start (for starting frontend server)
 ## edit your own correct database url in `backend/config/.env`
   because i have edited on my own according to databse
 
-# Most Important:
-  ## REFRESH after you logout from one role and then if you want to login in another role
+## Loan impelementation done:
+frontend/src/components/loanManagement.js handles for all logics and there is route in backend loan.js , there are differnt dashboards for customer and admin for loans
+

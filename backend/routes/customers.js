@@ -133,7 +133,13 @@ router.post('/login', async (req, res) => {
 
     try {
         // Fetch user by email
-        const userResult = await pool.query('SELECT * FROM Customers WHERE email = $1', [email]);
+        const userResult = await pool.query(
+            `SELECT c.cust_id, c.role, c.pass, a.acc_no 
+             FROM Customers c
+             LEFT JOIN Accounts a ON c.cust_id = a.cust_id
+             WHERE c.email = $1`,
+            [email]
+        );
 
         if (userResult.rows.length === 0) {
             return res.status(404).json({ message: 'User not found' });
@@ -146,10 +152,11 @@ router.post('/login', async (req, res) => {
             return res.status(401).json({ message: 'Incorrect password' });
         }
 
-        // Return role and cust_id to be used in the frontend
+        // Return role, cust_id, and acc_no to the frontend
         res.status(200).json({
             role: user.role,  // Ensure the role is either "customer" or "admin"
             cust_id: user.cust_id,
+            acc_no: user.acc_no,  // Include the account number
         });
     } catch (err) {
         console.error('Error during login:', err.message);

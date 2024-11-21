@@ -27,8 +27,17 @@ const Navbar = () => {
                     </>
                 ) : (
                     <>
-                        {role === 'admin' && <li><Link to="/admin-dashboard">Admin Dashboard</Link></li>}
-                        {role === 'customer' && <li><Link to="/customers">Customer Dashboard</Link></li>}
+                        {role === 'admin' && (
+                            <>
+                                <li><Link to="/admin-dashboard">Admin Dashboard</Link></li>
+                            </>
+                        )}
+                        {role === 'customer' && (
+                            <>
+                                <li><Link to="/customers">Customer Dashboard</Link></li>
+                                <li><Link to="/loan-management">Loan Management</Link></li>
+                            </>
+                        )}
                         <li>
                             <button onClick={handleLogout} style={{ marginLeft: '10px' }}>
                                 Logout
