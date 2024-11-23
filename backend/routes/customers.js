@@ -1,7 +1,7 @@
 // Import statements using ES modules
 import express from 'express';
 import pool from '../config/db.js';
-import bcrypt from 'bcryptjs';
+// import bcrypt from 'bcryptjs';
 
 const router = express.Router();
 
@@ -47,33 +47,6 @@ router.post('/signup', async (req, res) => {
     }
 });
 
-// // Customer Login (no token)
-// router.post('/login', async (req, res) => {
-//     const { email, password } = req.body;
-
-//     try {
-//         // Fetch user by email
-//         const user = await pool.query('SELECT * FROM Customers WHERE email = $1', [email]);
-
-//         if (user.rows.length === 0) {
-//             return res.status(404).json({ message: 'User not found' });
-//         }
-
-//         // Check password
-//         if (user.rows[0].pass !== password) {
-//             return res.status(401).json({ message: 'Incorrect password' });
-//         }
-
-//         // Return role and cust_id
-//         res.status(200).json({
-//             role: user.rows[0].role,
-//             cust_id: user.rows[0].cust_id,
-//         });
-//     } catch (err) {
-//         console.error('Error during login:', err.message);
-//         res.status(500).json({ message: 'Server error' });
-//     }
-// });
 
 // Fetch Customer Balance (no token)
 router.get('/balance', async (req, res) => {
@@ -229,89 +202,6 @@ router.get('/transactions', async (req, res) => {
     }
 });
 
-// Transfer endpoint
-// router.post('/transfer', async (req, res) => {
-//     console.log('Incoming request body:', req.body);
-
-//     const { sender_id, receiver_account, amount } = req.body;
-
-//     // Input validation
-//     if (!sender_id || isNaN(sender_id)) {
-//         console.error('Invalid sender ID:', sender_id);
-//         return res.status(400).json({ message: 'Invalid sender ID' });
-//     }
-//     if (!receiver_account || isNaN(receiver_account)) {
-//         console.error('Invalid receiver account:', receiver_account);
-//         return res.status(400).json({ message: 'Invalid receiver account' });
-//     }
-//     if (!amount || isNaN(amount) || amount <= 0) {
-//         console.error('Invalid transfer amount:', amount);
-//         return res.status(400).json({ message: 'Invalid transfer amount' });
-//     }
-
-//     console.log('Validated request data:', { sender_id, receiver_account, amount });
-
-//     const client = await pool.connect();
-
-//     try {
-//         await client.query('BEGIN');
-
-//         // Check sender account
-//         const senderAccount = await client.query(
-//             'SELECT balance FROM Accounts WHERE cust_id = $1',
-//             [parseInt(sender_id)]
-//         );
-
-//         if (senderAccount.rows.length === 0) {
-//             console.error('Sender account not found:', sender_id);
-//             throw new Error('Sender account not found');
-//         }
-
-//         if (senderAccount.rows[0].balance < amount) {
-//             console.error('Insufficient balance:', senderAccount.rows[0].balance);
-//             throw new Error('Insufficient balance');
-//         }
-
-//         // Check receiver account
-//         const receiverAccount = await client.query(
-//             'SELECT cust_id FROM Accounts WHERE acc_no = $1',
-//             [parseInt(receiver_account)]
-//         );
-
-//         if (receiverAccount.rows.length === 0) {
-//             console.error('Receiver account not found:', receiver_account);
-//             throw new Error('Receiver account not found');
-//         }
-
-//         // Deduct amount from sender
-//         await client.query(
-//             'UPDATE Accounts SET balance = balance - $1 WHERE cust_id = $2',
-//             [parseFloat(amount), parseInt(sender_id)]
-//         );
-
-//         // Add amount to receiver
-//         await client.query(
-//             'UPDATE Accounts SET balance = balance + $1 WHERE acc_no = $2',
-//             [parseFloat(amount), parseInt(receiver_account)]
-//         );
-
-//         // Log the transaction
-//         await client.query(
-//             'INSERT INTO Transactions (sender_id, receiver_id, amount, date_time) VALUES ($1, $2, $3, NOW())',
-//             [parseInt(sender_id), parseInt(receiver_account), parseFloat(amount)]
-//         );
-
-//         await client.query('COMMIT');
-//         console.log('Transfer successful');
-//         res.status(200).json({ message: 'Transfer successful' });
-//     } catch (err) {
-//         await client.query('ROLLBACK');
-//         console.error('Error during transfer:', err.message);
-//         res.status(500).json({ message: err.message || 'Transfer failed' });
-//     } finally {
-//         client.release();
-//     }
-// });
 
 // Transfer endpoint
 router.post('/transfer', async (req, res) => {

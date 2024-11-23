@@ -89,7 +89,7 @@ const AdminDashboard = () => {
             <table>
                 <thead>
                     <tr>
-                        <th>ID</th>
+                        <th>Transaction ID</th>
                         <th>Sender</th>
                         <th>Receiver</th>
                         <th>Amount</th>
