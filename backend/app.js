@@ -24,16 +24,23 @@ import billingRoutes from './routes/billing.js';
 import employeeRoutes from './routes/employees.js';
 import adminRoutes from './routes/admin.js';
 
+
+import bodyParser from 'body-parser';
+import authRoutes from './routes/auth.js';
+
+app.use(bodyParser.json());
+
 // Use the imported routes
+app.use('/api', authRoutes); // Unified Auth Routes
 app.use('/api/customers', customerRoutes);
 app.use('/api/accounts', accountRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/api/manager', managerRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/purchase', purchaseRoutes);
-app.use('/api/billing', billingRoutes);
+// app.use('/api/inventory', inventoryRoutes);
+// app.use('/api/sales', salesRoutes);
+// app.use('/api/purchase', purchaseRoutes);
+// app.use('/api/billing', billingRoutes );
 app.use('/api/employees', employeeRoutes);
 app.use('/api/admin', adminRoutes);
 

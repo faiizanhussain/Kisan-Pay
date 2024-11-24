@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 
 const Login = () => {
+    const [role, setRole] = useState('customer'); // Default role
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
@@ -21,24 +22,23 @@ const Login = () => {
         }
     
         try {
-            const response = await axios.post('http://localhost:5000/api/customers/login', {
+            const response = await axios.post('http://localhost:5000/api/login', {
+                role, // Include role in the request
                 email,
                 password,
             });
-    
-            const { role, cust_id, acc_no } = response.data; // Include acc_no
-            localStorage.setItem('role', role);
-            localStorage.setItem('cust_id', cust_id);
-    
-            // Save acc_no to localStorage for customer actions
-            if (role === 'customer') {
+
+            const { role: userRole, cust_id, acc_no, employee_id } = response.data;
+
+            // Store relevant data in localStorage
+            localStorage.setItem('role', userRole);
+            if (userRole === 'customer') {
+                localStorage.setItem('cust_id', cust_id);
                 localStorage.setItem('acc_no', acc_no);
-            }
-    
-            if (role === 'admin') {
-                navigate('/admin-dashboard');
-            } else {
                 navigate('/customers');
+            } else if (userRole === 'admin') {
+                localStorage.setItem('employee_id', employee_id);
+                navigate('/admin-dashboard');
             }
         } catch (err) {
             setError(err.response?.data?.message || 'Login failed');
@@ -50,6 +50,26 @@ const Login = () => {
     
     return (
         <form onSubmit={handleSubmit}>
+            <div>
+                <label>
+                    <input
+                        type="radio"
+                        value="customer"
+                        checked={role === 'customer'}
+                        onChange={() => setRole('customer')}
+                    />
+                    Customer
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        value="admin"
+                        checked={role === 'admin'}
+                        onChange={() => setRole('admin')}
+                    />
+                    Admin
+                </label>
+            </div>
             <input
                 type="email"
                 placeholder="Email"
@@ -57,7 +77,7 @@ const Login = () => {
                 onChange={e => setEmail(e.target.value)}
                 required
             />
-            <input
+            <input      
                 type="password"
                 placeholder="Password"
                 value={password}
