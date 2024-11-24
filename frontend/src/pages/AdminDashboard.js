@@ -16,6 +16,9 @@ const AdminDashboard = () => {
   const [productName, setProductName] = useState('');
   const [description, setDescription] = useState('');
   const [basePrice, setBasePrice] = useState('');
+  const [inventories, setInventories] = useState([]);
+  const [orders, setOrders] = useState([]);
+
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -29,16 +32,24 @@ const AdminDashboard = () => {
           customerRes,
           loanRes,
           productRes,
+          inventoryRes,
+          orderRes,
         ] = await Promise.all([
           axios.get('http://localhost:5000/api/admin/transactions'),
           axios.get('http://localhost:5000/api/admin/customers'),
           axios.get('http://localhost:5000/api/loans'),
           axios.get('http://localhost:5000/api/admin/products'),
+          axios.get('http://localhost:5000/api/admin/inventories'),
+          axios.get('http://localhost:5000/api/admin/orders'),
         ]);
+  
+        // Set the state variables with the fetched data
         setTransactions(transactionRes.data);
         setCustomers(customerRes.data);
         setLoans(loanRes.data);
         setProducts(productRes.data);
+        setInventories(inventoryRes.data);
+        setOrders(orderRes.data);
       } catch (err) {
         console.error('Error fetching data:', err.message);
         setError('Failed to load data.');
@@ -46,10 +57,11 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     };
-
+  
     fetchData();
   }, []);
-
+  
+  
   const handleAddMoney = async (e) => {
     e.preventDefault();
     try {
@@ -219,6 +231,85 @@ const AdminDashboard = () => {
           ))}
         </tbody>
       </table>
+
+      {/* All Inventories... */}
+        <h2>All Inventories</h2>
+        {inventories.length > 0 ? (
+          <table>
+            <thead>
+              <tr>
+                <th>Inventory ID</th>
+                <th>Supplier ID</th>
+                <th>Supplier Name</th>
+                <th>Product Name</th>
+                <th>Quantity</th>
+                <th>Price (PKR)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inventories.map((inventory) => (
+                <tr key={inventory.inventory_id}>
+                  <td>{inventory.inventory_id}</td>
+                  <td>{inventory.supplier_id}</td>
+                  <td>
+                    {inventory.supplier_first_name} {inventory.supplier_last_name}
+                  </td>
+                  <td>{inventory.product_name}</td>
+                  <td>{inventory.quantity}</td>
+                  <td>{inventory.price}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        ) : (
+          <p>No inventories available.</p>
+        )}
+
+
+
+      {/* All Orders... */}
+      <h2>All Orders</h2>
+      {orders.length > 0 ? (
+        <table>
+          <thead>
+            <tr>
+              <th>Order ID</th>
+              <th>Order Date</th>
+              <th>Buyer ID</th>
+              <th>Buyer Name</th>
+              <th>Supplier ID</th>
+              <th>Supplier Name</th>
+              <th>Product Name</th>
+              <th>Quantity</th>
+              <th>Price per Unit (PKR)</th>
+              <th>Total Price (PKR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {orders.map((order) => (
+              <tr key={order.order_detail_id}>
+                <td>{order.order_id}</td>
+                <td>{new Date(order.order_date).toLocaleDateString()}</td>
+                <td>{order.buyer_id}</td>
+                <td>
+                  {order.buyer_first_name} {order.buyer_last_name}
+                </td>
+                <td>{order.supplier_id}</td>
+                <td>
+                  {order.supplier_first_name} {order.supplier_last_name}
+                </td>
+                <td>{order.product_name}</td>
+                <td>{order.quantity}</td>
+                <td>{order.price}</td>
+                <td>{order.item_total}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>No orders available.</p>
+      )}
+
 
       <h2>Loan Requests</h2>
       {/* Loans table */}
