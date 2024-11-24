@@ -11,6 +11,7 @@ const SignUp = () => {
         pass: '',
         cnic: '',
         u_name: '',
+        role: 'Buyer', // Default role
     });
     const [message, setMessage] = useState('');
     const [error, setError] = useState('');
@@ -102,6 +103,15 @@ const SignUp = () => {
                     onChange={handleChange}
                     required
                 />
+                <select
+                    name="role"
+                    value={formData.role}
+                    onChange={handleChange}
+                    required
+                >
+                    <option value="Buyer">Buyer</option>
+                    <option value="Seller">Seller</option>
+                </select>
                 <button type="submit">Sign Up</button>
             </form>
             {message && <p style={{ color: 'green' }}>{message}</p>}
