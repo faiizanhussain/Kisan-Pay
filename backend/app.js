@@ -37,10 +37,10 @@ app.use('/api/accounts', accountRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/loans', loanRoutes);
 app.use('/api/manager', managerRoutes);
-app.use('/api/inventory', inventoryRoutes);
-app.use('/api/sales', salesRoutes);
-app.use('/api/purchase', purchaseRoutes);
-app.use('/api/billing', billingRoutes);
+// app.use('/api/inventory', inventoryRoutes);
+// app.use('/api/sales', salesRoutes);
+// app.use('/api/purchase', purchaseRoutes);
+// app.use('/api/billing', billingRoutes );
 app.use('/api/employees', employeeRoutes);
 app.use('/api/admin', adminRoutes);
 

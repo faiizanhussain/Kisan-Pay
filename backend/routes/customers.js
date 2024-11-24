@@ -171,7 +171,10 @@ router.get('/profile', async (req, res) => {
         if (!cust_id) {
             return res.status(400).json({ message: 'Customer ID is required' });
         }
-        const customer = await pool.query('SELECT f_name, l_name, email, phone, cnic, u_name FROM Customers WHERE cust_id = $1', [cust_id]);
+        const customer = await pool.query(
+            'SELECT f_name, l_name, email, phone, cnic, u_name, role FROM Customers WHERE cust_id = $1',
+            [cust_id]
+        );
         if (customer.rows.length === 0) {
             return res.status(404).json({ message: 'Customer not found' });
         }
@@ -295,5 +298,93 @@ router.post('/transfer', async (req, res) => {
         client.release();
     }
 });
+
+router.post('/inventory/add', async (req, res) => {
+    const { cust_id, product_name, quantity, price } = req.body;
+  
+    // Input validation
+    if (!cust_id || isNaN(cust_id)) {
+      return res.status(400).json({ message: 'Invalid customer ID' });
+    }
+    if (!product_name || product_name.trim() === '') {
+      return res.status(400).json({ message: 'Product name is required' });
+    }
+    if (!quantity || isNaN(quantity) || quantity <= 0) {
+      return res.status(400).json({ message: 'Invalid quantity' });
+    }
+    if (!price || isNaN(price) || price <= 0) {
+      return res.status(400).json({ message: 'Invalid price' });
+    }
+  
+    try {
+      // Verify customer role
+      const customerResult = await pool.query('SELECT role FROM Customers WHERE cust_id = $1', [cust_id]);
+      if (customerResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      const role = customerResult.rows[0].role;
+      if (role !== 'Seller') {
+        return res.status(403).json({ message: 'Only sellers can add products to inventory' });
+      }
+  
+      // Check if product exists
+      const productResult = await pool.query('SELECT product_id FROM Products WHERE product_name = $1', [product_name]);
+      if (productResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Product not found in products list' });
+      }
+      const product_id = productResult.rows[0].product_id;
+  
+      // Insert into Inventory
+      const insertResult = await pool.query(
+        'INSERT INTO Inventory (supplier_id, product_id, quantity, price) VALUES ($1, $2, $3, $4) RETURNING *',
+        [cust_id, product_id, quantity, price]
+      );
+  
+      res.status(201).json({ message: 'Product added to inventory', inventory: insertResult.rows[0] });
+    } catch (err) {
+      console.error('Error adding product to inventory:', err.message);
+      res.status(500).json({ message: 'Failed to add product to inventory' });
+    }
+  });
+    
+
+  // In customers.js
+
+// Route to get buyer's inventory
+router.get('/inventory', async (req, res) => {      
+    const { cust_id } = req.query;
+  
+    if (!cust_id || isNaN(cust_id)) {
+      return res.status(400).json({ message: 'Invalid customer ID' });
+    }
+  
+    try {
+      // Verify customer role
+      const customerResult = await pool.query('SELECT role FROM Customers WHERE cust_id = $1', [cust_id]);
+      if (customerResult.rows.length === 0) {
+        return res.status(404).json({ message: 'Customer not found' });
+      }
+      const role = customerResult.rows[0].role;
+      if (role !== 'Seller') {
+        return res.status(403).json({ message: 'Only sellers can access inventory' });
+      }
+  
+      // Fetch inventory items
+      const inventoryResult = await pool.query(
+        `SELECT i.inventory_id, p.product_name, i.quantity, i.price
+         FROM Inventory i
+         JOIN Products p ON i.product_id = p.product_id
+         WHERE i.supplier_id = $1`,
+        [cust_id]
+      );
+  
+      res.json(inventoryResult.rows);
+    } catch (err) {
+      console.error('Error fetching inventory:', err.message);
+      res.status(500).json({ message: 'Failed to fetch inventory' });
+    }
+  });
+    
+  
 
 export default router;
