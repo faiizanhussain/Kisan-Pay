@@ -384,6 +384,25 @@ router.get('/inventory', async (req, res) => {
       res.status(500).json({ message: 'Failed to fetch inventory' });
     }
   });
+
+  // Route to get all available inventory items for buyers
+router.get('/inventory/all', async (req, res) => {
+    try {
+      const inventoryResult = await pool.query(
+        `SELECT i.inventory_id, p.product_name, i.quantity, i.price, c.f_name AS seller_first_name, c.l_name AS seller_last_name
+         FROM Inventory i
+         JOIN Products p ON i.product_id = p.product_id
+         JOIN Customers c ON i.supplier_id = c.cust_id
+         WHERE i.quantity > 0`
+      );
+  
+      res.json(inventoryResult.rows);
+    } catch (err) {
+      console.error('Error fetching all inventory items:', err.message);
+      res.status(500).json({ message: 'Failed to fetch inventory items' });
+    }
+  });
+  
     
   
 

@@ -28,56 +28,62 @@
     useEffect(() => {
         const role = localStorage.getItem('role');
         if (!role) {
-        navigate('/login');
-        return;
+          navigate('/login');
+          return;
         }
-
+      
         const fetchAccountData = async () => {
-        try {
+          try {
             const cust_id = localStorage.getItem('cust_id');
             if (!cust_id) {
-            alert('Customer ID not found. Please log in again.');
-            navigate('/login');
-            return;
+              alert('Customer ID not found. Please log in again.');
+              navigate('/login');
+              return;
             }
-
+      
             // Fetch balance
             const balanceResponse = await axios.get('http://localhost:5000/api/customers/balance', {
-            params: { cust_id },
+              params: { cust_id },
             });
             setBalance(balanceResponse.data.balance);
             setAccountExists(true);
-
+      
             // Fetch transactions
             const transactionsResponse = await axios.get('http://localhost:5000/api/customers/transactions', {
-            params: { cust_id },
+              params: { cust_id },
             });
             setTransactions(transactionsResponse.data);
-
+      
             // Fetch profile details
             const profileResponse = await axios.get('http://localhost:5000/api/customers/profile', {
-            params: { cust_id },
+              params: { cust_id },
             });
             setProfile(profileResponse.data);
-
-            // Fetch inventory items if the user is a buyer
-            if (profileResponse.data.role === 'Buyer') {
-            const inventoryResponse = await axios.get('http://localhost:5000/api/customers/inventory', {
+      
+            // Fetch inventory items based on role
+            if (profileResponse.data.role === 'Seller') {
+              // Fetch seller's own inventory
+              const inventoryResponse = await axios.get('http://localhost:5000/api/customers/inventory', {
                 params: { cust_id },
-            });
-            setInventoryItems(inventoryResponse.data);
+              });
+              setInventoryItems(inventoryResponse.data);
+            } else if (profileResponse.data.role === 'Buyer') {
+              // Fetch all available inventory items for buyers
+              const inventoryResponse = await axios.get('http://localhost:5000/api/customers/inventory/all');
+              setInventoryItems(inventoryResponse.data);
             }
-
+      
             setLoading(false);
-        } catch (err) {
+          } catch (err) {
             console.error('Error in fetchAccountData:', err.message || err.response?.data?.message);
             setError('Failed to fetch account data');
             setLoading(false);
-        }
+          }
         };
-
+      
         fetchAccountData();
-    }, [navigate]);
+      }, [navigate]);
+      
 
     const handleCreateAccount = async () => {
         const cust_id = localStorage.getItem('cust_id');
@@ -260,6 +266,38 @@
                     <p>You have no items in your inventory.</p>
                 )}
                 </>
+            )}
+
+            {profile && profile.role === 'Buyer' && (
+            <>
+                <h2>Available Products</h2>
+                {inventoryItems.length > 0 ? (
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Inventory ID</th>
+                        <th>Product Name</th>
+                        <th>Quantity</th>
+                        <th>Price (PKR)</th>
+                        <th>Seller</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {inventoryItems.map((item) => (
+                        <tr key={item.inventory_id}>
+                        <td>{item.inventory_id}</td>
+                        <td>{item.product_name}</td>
+                        <td>{item.quantity}</td>
+                        <td>{item.price}</td>
+                        <td>{item.seller_first_name} {item.seller_last_name}</td>
+                        </tr>
+                    ))}
+                    </tbody>
+                </table>
+                ) : (
+                <p>No products available.</p>
+                )}
+            </>
             )}
 
             <h2>Money Transfer</h2>
