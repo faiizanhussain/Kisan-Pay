@@ -16,17 +16,21 @@ router.get('/', async (req, res) => {
     }
 });
 
-// Customer Signup
+//customer signup
 router.post('/signup', async (req, res) => {
-    const { f_name, l_name, email, phone, pass, cnic, u_name } = req.body;
+    const { f_name, l_name, email, phone, pass, cnic, u_name, role } = req.body;
+
+    if (!['Buyer', 'Seller'].includes(role)) {
+        return res.status(400).json({ message: 'Invalid role. Must be Buyer or Seller.' });
+    }
 
     const client = await pool.connect();
     try {
         await client.query('BEGIN');
 
         const newCustomer = await client.query(
-            'INSERT INTO Customers (f_name, l_name, email, phone, pass, cnic, u_name) VALUES ($1, $2, $3, $4, $5, $6, $7) RETURNING cust_id',
-            [f_name, l_name, email, phone, pass, cnic, u_name]
+            'INSERT INTO Customers (f_name, l_name, email, phone, pass, cnic, u_name, role) VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING cust_id',
+            [f_name, l_name, email, phone, pass, cnic, u_name, role]
         );
 
         // Automatically create an account for the customer
@@ -127,7 +131,7 @@ router.post('/login', async (req, res) => {
 
         // Return role, cust_id, and acc_no to the frontend
         res.status(200).json({
-            role: user.role,  // Ensure the role is either "customer" or "admin"
+            role: user.role,  // Ensure the role is either "buyer" or "seller"
             cust_id: user.cust_id,
             acc_no: user.acc_no,  // Include the account number
         });
