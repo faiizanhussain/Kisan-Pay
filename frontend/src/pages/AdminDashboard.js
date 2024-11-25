@@ -11,14 +11,13 @@ const AdminDashboard = () => {
   const [customers, setCustomers] = useState([]);
   const [loans, setLoans] = useState([]);
 
-  // New state variables for products
+  // State variables for products
   const [products, setProducts] = useState([]);
   const [productName, setProductName] = useState('');
   const [description, setDescription] = useState('');
   const [basePrice, setBasePrice] = useState('');
   const [inventories, setInventories] = useState([]);
   const [orders, setOrders] = useState([]);
-
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -42,7 +41,7 @@ const AdminDashboard = () => {
           axios.get('http://localhost:5000/api/admin/inventories'),
           axios.get('http://localhost:5000/api/admin/orders'),
         ]);
-  
+
         // Set the state variables with the fetched data
         setTransactions(transactionRes.data);
         setCustomers(customerRes.data);
@@ -57,11 +56,10 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, []);
-  
-  
+
   const handleAddMoney = async (e) => {
     e.preventDefault();
     try {
@@ -96,7 +94,7 @@ const AdminDashboard = () => {
     }
   };
 
-  // New function to handle adding a product
+  // Function to handle adding a product
   const handleAddProduct = async (e) => {
     e.preventDefault();
     try {
@@ -117,6 +115,22 @@ const AdminDashboard = () => {
       setProducts([response.data.product, ...products]);
     } catch (err) {
       alert('Failed to add product.');
+    }
+  };
+
+  // Function to handle product deletion
+  const handleDeleteProduct = async (productId) => {
+    if (window.confirm('Are you sure you want to delete this product?')) {
+      try {
+        await axios.delete(`http://localhost:5000/api/admin/products/${productId}`);
+        alert('Product deleted successfully');
+
+        // Update the products list
+        setProducts(products.filter((product) => product.product_id !== productId));
+      } catch (err) {
+        console.error('Error deleting product:', err.response?.data?.message || err.message);
+        alert(err.response?.data?.message || 'Failed to delete product');
+      }
     }
   };
 
@@ -148,7 +162,7 @@ const AdminDashboard = () => {
         <button type="submit">Add Money</button>
       </form>
 
-      {/* New section for adding products */}
+      {/* Section for adding products */}
       <h2>Add New Product</h2>
       <form onSubmit={handleAddProduct}>
         <input
@@ -183,6 +197,7 @@ const AdminDashboard = () => {
               <th>Name</th>
               <th>Description</th>
               <th>Base Price</th>
+              <th>Actions</th> {/* Added Actions column */}
             </tr>
           </thead>
           <tbody>
@@ -192,6 +207,11 @@ const AdminDashboard = () => {
                 <td>{product.product_name}</td>
                 <td>{product.description || 'N/A'}</td>
                 <td>{product.base_price} PKR</td>
+                <td>
+                  <button onClick={() => handleDeleteProduct(product.product_id)}>
+                    Delete
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
@@ -202,6 +222,7 @@ const AdminDashboard = () => {
 
       {/* Existing sections... */}
 
+      {/* Transactions */}
       <h2>All Transactions</h2>
       {/* Transactions table */}
       <table>
@@ -232,42 +253,40 @@ const AdminDashboard = () => {
         </tbody>
       </table>
 
-      {/* All Inventories... */}
-        <h2>All Inventories</h2>
-        {inventories.length > 0 ? (
-          <table>
-            <thead>
-              <tr>
-                <th>Inventory ID</th>
-                <th>Supplier ID</th>
-                <th>Supplier Name</th>
-                <th>Product Name</th>
-                <th>Quantity</th>
-                <th>Price (PKR)</th>
+      {/* All Inventories */}
+      <h2>All Inventories</h2>
+      {inventories.length > 0 ? (
+        <table>
+          <thead>
+            <tr>
+              <th>Inventory ID</th>
+              <th>Supplier ID</th>
+              <th>Supplier Name</th>
+              <th>Product Name</th>
+              <th>Quantity</th>
+              <th>Price (PKR)</th>
+            </tr>
+          </thead>
+          <tbody>
+            {inventories.map((inventory) => (
+              <tr key={inventory.inventory_id}>
+                <td>{inventory.inventory_id}</td>
+                <td>{inventory.supplier_id}</td>
+                <td>
+                  {inventory.supplier_first_name} {inventory.supplier_last_name}
+                </td>
+                <td>{inventory.product_name}</td>
+                <td>{inventory.quantity}</td>
+                <td>{inventory.price}</td>
               </tr>
-            </thead>
-            <tbody>
-              {inventories.map((inventory) => (
-                <tr key={inventory.inventory_id}>
-                  <td>{inventory.inventory_id}</td>
-                  <td>{inventory.supplier_id}</td>
-                  <td>
-                    {inventory.supplier_first_name} {inventory.supplier_last_name}
-                  </td>
-                  <td>{inventory.product_name}</td>
-                  <td>{inventory.quantity}</td>
-                  <td>{inventory.price}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        ) : (
-          <p>No inventories available.</p>
-        )}
+            ))}
+          </tbody>
+        </table>
+      ) : (
+        <p>No inventories available.</p>
+      )}
 
-
-
-      {/* All Orders... */}
+      {/* All Orders */}
       <h2>All Orders</h2>
       {orders.length > 0 ? (
         <table>
@@ -310,7 +329,7 @@ const AdminDashboard = () => {
         <p>No orders available.</p>
       )}
 
-
+      {/* Loan Requests */}
       <h2>Loan Requests</h2>
       {/* Loans table */}
       <table>
@@ -361,4 +380,3 @@ const AdminDashboard = () => {
 };
 
 export default AdminDashboard;
-    

@@ -167,4 +167,35 @@ router.get('/orders', async (req, res) => {
   }
 });
 
+// Admin-only route to delete a product
+router.delete('/products/:product_id', async (req, res) => {
+  const { product_id } = req.params;
+
+  if (!product_id || isNaN(product_id)) {
+    return res.status(400).json({ message: 'Invalid product ID' });
+  }
+
+  try {
+    // Check if the product exists
+    const productResult = await pool.query(
+      'SELECT * FROM Products WHERE product_id = $1',
+      [product_id]
+    );
+
+    if (productResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Delete the product
+    await pool.query('DELETE FROM Products WHERE product_id = $1', [product_id]);
+
+    res.status(200).json({ message: 'Product deleted successfully' });
+  } catch (err) {
+    console.error('Error deleting product:', err.message);
+    res.status(500).json({ message: 'Failed to delete product' });
+  }
+});
+
+
+
 export default router;
