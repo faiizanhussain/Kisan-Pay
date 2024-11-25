@@ -197,5 +197,51 @@ router.delete('/products/:product_id', async (req, res) => {
 });
 
 
+// Admin-only route to update a product
+router.put('/products/:product_id', async (req, res) => {
+  const { product_id } = req.params;
+  const { product_name, description, base_price } = req.body;
+
+  if (!product_id || isNaN(product_id)) {
+    return res.status(400).json({ message: 'Invalid product ID' });
+  }
+
+  // Input validation
+  if (!product_name || product_name.trim() === '') {
+    return res.status(400).json({ message: 'Product name is required' });
+  }
+  if (!base_price || isNaN(base_price) || base_price <= 0) {
+    return res.status(400).json({ message: 'Invalid base price' });
+  }
+
+  try {
+    // Check if the product exists
+    const productResult = await pool.query(
+      'SELECT * FROM Products WHERE product_id = $1',
+      [product_id]
+    );
+
+    if (productResult.rows.length === 0) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Update the product
+    const updatedProductResult = await pool.query(
+      'UPDATE Products SET product_name = $1, description = $2, base_price = $3 WHERE product_id = $4 RETURNING *',
+      [product_name, description || null, parseFloat(base_price), product_id]
+    );
+
+    res.status(200).json({
+      message: 'Product updated successfully',
+      product: updatedProductResult.rows[0],
+    });
+  } catch (err) {
+    console.error('Error updating product:', err.message);
+    res.status(500).json({ message: 'Failed to update product' });
+  }
+});
+
+
+
 
 export default router;

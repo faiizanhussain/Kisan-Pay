@@ -19,6 +19,12 @@ const AdminDashboard = () => {
   const [inventories, setInventories] = useState([]);
   const [orders, setOrders] = useState([]);
 
+  // State variables for editing a product
+  const [editingProduct, setEditingProduct] = useState(null);
+  const [editProductName, setEditProductName] = useState('');
+  const [editDescription, setEditDescription] = useState('');
+  const [editBasePrice, setEditBasePrice] = useState('');
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -134,6 +140,51 @@ const AdminDashboard = () => {
     }
   };
 
+  // Function to handle when the Edit button is clicked
+  const handleEditProduct = (product) => {
+    setEditingProduct(product);
+    // Pre-fill the form with the current product details
+    setEditProductName(product.product_name);
+    setEditDescription(product.description || '');
+    setEditBasePrice(product.base_price);
+  };
+
+  // Function to handle updating the product
+  const handleUpdateProduct = async (e) => {
+    e.preventDefault();
+    if (!editingProduct) return;
+
+    try {
+      const response = await axios.put(
+        `http://localhost:5000/api/admin/products/${editingProduct.product_id}`,
+        {
+          product_name: editProductName,
+          description: editDescription,
+          base_price: parseFloat(editBasePrice),
+        }
+      );
+      alert(response.data.message);
+
+      // Update the products list
+      setProducts(
+        products.map((product) =>
+          product.product_id === editingProduct.product_id
+            ? response.data.product
+            : product
+        )
+      );
+
+      // Reset the edit form
+      setEditingProduct(null);
+      setEditProductName('');
+      setEditDescription('');
+      setEditBasePrice('');
+    } catch (err) {
+      console.error('Error updating product:', err.response?.data?.message || err.message);
+      alert(err.response?.data?.message || 'Failed to update product');
+    }
+  };
+
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
 
@@ -208,6 +259,7 @@ const AdminDashboard = () => {
                 <td>{product.description || 'N/A'}</td>
                 <td>{product.base_price} PKR</td>
                 <td>
+                  <button onClick={() => handleEditProduct(product)}>Edit</button>
                   <button onClick={() => handleDeleteProduct(product.product_id)}>
                     Delete
                   </button>
@@ -218,6 +270,38 @@ const AdminDashboard = () => {
         </table>
       ) : (
         <p>No products available.</p>
+      )}
+
+      {/* Edit Product Form */}
+      {editingProduct && (
+        <div>
+          <h2>Edit Product</h2>
+          <form onSubmit={handleUpdateProduct}>
+            <input
+              type="text"
+              placeholder="Product Name"
+              value={editProductName}
+              onChange={(e) => setEditProductName(e.target.value)}
+              required
+            />
+            <textarea
+              placeholder="Description"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+            ></textarea>
+            <input
+              type="number"
+              placeholder="Base Price (PKR)"
+              value={editBasePrice}
+              onChange={(e) => setEditBasePrice(e.target.value)}
+              required
+            />
+            <button type="submit">Update Product</button>
+            <button type="button" onClick={() => setEditingProduct(null)}>
+              Cancel
+            </button>
+          </form>
+        </div>
       )}
 
       {/* Existing sections... */}
