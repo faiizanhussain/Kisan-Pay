@@ -170,7 +170,7 @@ router.get('/orders', async (req, res) => {
 // Admin-only route to delete a product
 router.delete('/products/:product_id', async (req, res) => {
   const { product_id } = req.params;
-
+  
   if (!product_id || isNaN(product_id)) {
     return res.status(400).json({ message: 'Invalid product ID' });
   }
