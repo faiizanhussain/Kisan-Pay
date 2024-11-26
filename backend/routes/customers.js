@@ -234,65 +234,47 @@ router.post('/transfer', async (req, res) => {
   const client = await pool.connect();
 
   try {
+    // Start a transaction
     await client.query('BEGIN');
 
-    // Get sender account details
-    const senderAccountResult = await client.query(
-      'SELECT acc_no, balance FROM Accounts WHERE cust_id = $1',
-      [parseInt(cust_id)]
-    );
-
-    if (senderAccountResult.rows.length === 0) {
-      console.error('Sender account not found:', cust_id);
-      throw new Error('Sender account not found');
-    }
-
-    const sender_acc_no = senderAccountResult.rows[0].acc_no;
-    const senderBalance = parseFloat(senderAccountResult.rows[0].balance);
-
-    if (senderBalance < amount) {
-      console.error('Insufficient balance:', senderBalance);
-      throw new Error('Insufficient balance');
-    }
-
-    // Check receiver account
-    const receiverAccountResult = await client.query(
-      'SELECT cust_id FROM Accounts WHERE acc_no = $1',
-      [parseInt(receiver_account)]
-    );
-
-    if (receiverAccountResult.rows.length === 0) {
-      console.error('Receiver account not found:', receiver_account);
-      throw new Error('Receiver account not found');
-    }
-
-    const receiver_cust_id = receiverAccountResult.rows[0].cust_id;
-
-    // Deduct amount from sender
-    await client.query('UPDATE Accounts SET balance = balance - $1 WHERE cust_id = $2', [
-      parseFloat(amount),
+    // Call the stored procedure
+    await client.query('SELECT transfer_funds($1, $2, $3)', [
       parseInt(cust_id),
-    ]);
-
-    // Add amount to receiver
-    await client.query('UPDATE Accounts SET balance = balance + $1 WHERE acc_no = $2', [
-      parseFloat(amount),
       parseInt(receiver_account),
+      parseFloat(amount),
     ]);
 
-    // Log the transaction
-    await client.query(
-      'INSERT INTO Transactions (acc_no, amount, date_time, transfer_to, sender_id, receiver_id) VALUES ($1, $2, NOW(), $3, $4, $5)',
-      [sender_acc_no, parseFloat(amount), parseInt(receiver_account), parseInt(cust_id), parseInt(receiver_cust_id)]
-    );
-
+    // Commit the transaction
     await client.query('COMMIT');
     console.log('Transfer successful');
     res.status(200).json({ message: 'Transfer successful' });
   } catch (err) {
+    // Rollback the transaction
     await client.query('ROLLBACK');
     console.error('Error during transfer:', err.message);
-    res.status(500).json({ message: err.message || 'Transfer failed' });
+
+    // Custom error handling
+    let statusCode = 500;
+    let errorMessage = 'Transfer failed';
+
+    if (err.message.includes('Insufficient balance')) {
+      statusCode = 400;
+      errorMessage = 'Insufficient balance';
+    } else if (err.message.includes('Receiver account not found')) {
+      statusCode = 400;
+      errorMessage = 'Receiver account not found';
+    } else if (err.message.includes('Sender account not found')) {
+      statusCode = 400;
+      errorMessage = 'Sender account not found';
+    } else if (err.message.includes('Transfer amount must be positive')) {
+      statusCode = 400;
+      errorMessage = 'Invalid transfer amount';
+    } else if (err.message.includes('Invalid input parameters')) {
+      statusCode = 400;
+      errorMessage = 'Invalid input parameters';
+    }
+
+    res.status(statusCode).json({ message: errorMessage });
   } finally {
     client.release();
   }
