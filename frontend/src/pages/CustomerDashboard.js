@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
+import '../styles/CustomerDashboard.css';
 
 const CustomerDashboard = () => {
   const navigate = useNavigate();
@@ -33,6 +34,7 @@ const CustomerDashboard = () => {
   const [purchaseMessage, setPurchaseMessage] = useState('');
 
   // State variable for orders
+  const [activeSection, setActiveSection] = useState('profile'); 
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
@@ -253,211 +255,88 @@ const CustomerDashboard = () => {
   if (loading) {
     return <p>Loading...</p>;
   }
-
   return (
-    <div>
-      <h1>Customer Dashboard</h1>
-      {accountExists ? (
-        <>
-          <h2>Balance</h2>
-          <p>{balance !== null ? `${balance} PKR` : 'Loading...'}</p>
+    <div className="customer-dashboard-container">
+      <h1 className="dashboard-title">Customer Dashboard</h1>
 
-          <h2>Profile Details</h2>
+      {/* Navigation Menu */}
+      <div className="navigation-menu">
+        <button
+          className={`nav-button ${activeSection === 'profile' && 'active'}`}
+          onClick={() => setActiveSection('profile')}
+        >
+          Profile
+        </button>
+        <button
+          className={`nav-button ${activeSection === 'balance' && 'active'}`}
+          onClick={() => setActiveSection('balance')}
+        >
+          Balance
+        </button>
+        <button
+          className={`nav-button ${activeSection === 'transactions' && 'active'}`}
+          onClick={() => setActiveSection('transactions')}
+        >
+          Transactions
+        </button>
+        {profile?.role === 'Seller' && (
+          <button
+            className={`nav-button ${activeSection === 'inventory' && 'active'}`}
+            onClick={() => setActiveSection('inventory')}
+          >
+            Inventory
+          </button>
+        )}
+        {profile?.role === 'Buyer' && (
+          <button
+            className={`nav-button ${activeSection === 'orders' && 'active'}`}
+            onClick={() => setActiveSection('orders')}
+          >
+            Orders
+          </button>
+        )}
+        <button
+          className={`nav-button ${activeSection === 'transfer' && 'active'}`}
+          onClick={() => setActiveSection('transfer')}
+        >
+          Money Transfer
+        </button>
+      </div>
+
+      {/* Profile Section */}
+      {activeSection === 'profile' && (
+        <div className="section">
+          <h2 className="section-title">Profile Details</h2>
           {profile ? (
             <ul>
-              <li>First Name: {profile.f_name}</li>
-              <li>Last Name: {profile.l_name}</li>
-              <li>Email: {profile.email}</li>
-              <li>Phone: {profile.phone}</li>
-              <li>CNIC: {profile.cnic}</li>
-              <li>Username: {profile.u_name}</li>
-              <li>Role: {profile.role}</li>
+              <li><strong>First Name:</strong> {profile.f_name}</li>
+              <li><strong>Last Name:</strong> {profile.l_name}</li>
+              <li><strong>Email:</strong> {profile.email}</li>
+              <li><strong>Phone:</strong> {profile.phone}</li>
+              <li><strong>CNIC:</strong> {profile.cnic}</li>
+              <li><strong>Username:</strong> {profile.u_name}</li>
+              <li><strong>Role:</strong> {profile.role}</li>
             </ul>
           ) : (
-            <p>Loading profile details...</p>
+            <p>No profile data available.</p>
           )}
+        </div>
+      )}
 
-          {/* Seller Inventory Management */}
-          {profile && profile.role === 'Seller' && (
-            <>
-              <h2>Add Product to Inventory</h2>
-              <form onSubmit={handleAddToInventory}>
-                <input
-                  type="text"
-                  placeholder="Product Name"
-                  value={productName}
-                  onChange={(e) => setProductName(e.target.value)}
-                  required
-                />
-                <input
-                  type="number"
-                  placeholder="Quantity"
-                  value={quantity}
-                  onChange={(e) => setQuantity(e.target.value)}
-                  required
-                />
-                <input
-                  type="number"
-                  placeholder="Price (PKR)"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  required
-                />
-                <button type="submit">Add to Inventory</button>
-              </form>
-              {inventoryMessage && <p style={{ color: 'green' }}>{inventoryMessage}</p>}
-              {inventoryError && <p style={{ color: 'red' }}>{inventoryError}</p>}
+      {/* Balance Section */}
+      {activeSection === 'balance' && (
+        <div className="section">
+          <h2 className="section-title">Account Balance</h2>
+          <p>{balance !== null ? `${balance} PKR` : 'Loading...'}</p>
+        </div>
+      )}
 
-              <h2>Your Inventory</h2>
-              {inventoryItems.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Inventory ID</th>
-                      <th>Product Name</th>
-                      <th>Quantity</th>
-                      <th>Price (PKR)</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inventoryItems.map((item) => (
-                      <tr key={item.inventory_id}>
-                        <td>{item.inventory_id}</td>
-                        <td>{item.product_name}</td>
-                        <td>{item.quantity}</td>
-                        <td>{item.price}</td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p>You have no items in your inventory.</p>
-              )}
-            </>
-          )}
-
-          {/* Buyer Product Listing and Purchase */}
-          {profile && profile.role === 'Buyer' && (
-            <>
-              <h2>Available Products</h2>
-              {purchaseMessage && <p style={{ color: 'green' }}>{purchaseMessage}</p>}
-              {purchaseError && <p style={{ color: 'red' }}>{purchaseError}</p>}
-              {inventoryItems.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Inventory ID</th>
-                      <th>Product Name</th>
-                      <th>Quantity Available</th>
-                      <th>Price (PKR)</th>
-                      <th>Seller</th>
-                      <th>Action</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {inventoryItems.map((item) => (
-                      <tr key={item.inventory_id}>
-                        <td>{item.inventory_id}</td>
-                        <td>{item.product_name}</td>
-                        <td>{item.quantity}</td>
-                        <td>{item.price}</td>
-                        <td>
-                          {item.seller_first_name} {item.seller_last_name}
-                        </td>
-                        <td>
-                          <button onClick={() => handlePurchaseClick(item)}>Buy</button>
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p>No products available.</p>
-              )}
-
-              {/* Purchase Modal or Form */}
-              {showPurchaseForm && selectedProduct && (
-                <div className="modal">
-                  <h3>Purchase {selectedProduct.product_name}</h3>
-                  <form onSubmit={handlePurchase}>
-                    <input
-                      type="number"
-                      placeholder="Quantity"
-                      value={purchaseQuantity}
-                      onChange={(e) => setPurchaseQuantity(e.target.value)}
-                      min="1"
-                      max={selectedProduct.quantity}
-                      required
-                    />
-                    <button type="submit">Confirm Purchase</button>
-                    <button type="button" onClick={() => setShowPurchaseForm(false)}>
-                      Cancel
-                    </button>
-                  </form>
-                  {purchaseError && <p style={{ color: 'red' }}>{purchaseError}</p>}
-                </div>
-              )}
-
-              <h2>Your Orders</h2>
-              {orders.length > 0 ? (
-                <table>
-                  <thead>
-                    <tr>
-                      <th>Order ID</th>
-                      <th>Order Date</th>
-                      <th>Product</th>
-                      <th>Quantity</th>
-                      <th>Price per Unit (PKR)</th>
-                      <th>Total Price (PKR)</th>
-                      <th>Seller</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {orders.map((order) => (
-                      <tr key={order.order_detail_id}>
-                        <td>{order.order_id}</td>
-                        <td>{new Date(order.order_date).toLocaleDateString()}</td>
-                        <td>{order.product_name}</td>
-                        <td>{order.quantity}</td>
-                        <td>{order.price}</td>
-                        <td>{order.item_total}</td>
-                        <td>
-                          {order.seller_first_name} {order.seller_last_name}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              ) : (
-                <p>You have no orders.</p>
-              )}
-            </>
-          )}
-
-          <h2>Money Transfer</h2>
-          <form onSubmit={handleTransfer}>
-            <input
-              type="text"
-              placeholder="Receiver Account Number"
-              value={receiverAccount}
-              onChange={(e) => setReceiverAccount(e.target.value)}
-              required
-            />
-            <input
-              type="number"
-              placeholder="Amount (PKR)"
-              value={transferAmount}
-              onChange={(e) => setTransferAmount(e.target.value)}
-              required
-            />
-            <button type="submit">Transfer</button>
-          </form>
-          {message && <p style={{ color: 'green' }}>{message}</p>}
-          {error && <p style={{ color: 'red' }}>{error}</p>}
-
-          <h2>Transaction History</h2>
+      {/* Transactions Section */}
+      {activeSection === 'transactions' && (
+        <div className="section">
+          <h2 className="section-title">Transaction History</h2>
           {transactions.length > 0 ? (
-            <table>
+            <table className="data-table">
               <thead>
                 <tr>
                   <th>ID</th>
@@ -480,14 +359,103 @@ const CustomerDashboard = () => {
               </tbody>
             </table>
           ) : (
-            <p>No transactions found</p>
+            <p>No transactions found.</p>
           )}
-        </>
-      ) : (
-        <>
-          <p>No account found</p>
-          <button onClick={handleCreateAccount}>Create Account</button>
-        </>
+        </div>
+      )}
+
+      {/* Seller Inventory Section */}
+      {activeSection === 'inventory' && profile?.role === 'Seller' && (
+        <div className="section">
+          <h2 className="section-title">Your Inventory</h2>
+          {inventoryItems.length > 0 ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Inventory ID</th>
+                  <th>Product Name</th>
+                  <th>Quantity</th>
+                  <th>Price (PKR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventoryItems.map((item) => (
+                  <tr key={item.inventory_id}>
+                    <td>{item.inventory_id}</td>
+                    <td>{item.product_name}</td>
+                    <td>{item.quantity}</td>
+                    <td>{item.price}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No items in inventory.</p>
+          )}
+        </div>
+      )}
+
+      {/* Buyer Orders Section */}
+      {activeSection === 'orders' && profile?.role === 'Buyer' && (
+        <div className="section">
+          <h2 className="section-title">Your Orders</h2>
+          {orders.length > 0 ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Order Date</th>
+                  <th>Product</th>
+                  <th>Quantity</th>
+                  <th>Total Price (PKR)</th>
+                  <th>Seller</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.order_detail_id}>
+                    <td>{order.order_id}</td>
+                    <td>{new Date(order.order_date).toLocaleDateString()}</td>
+                    <td>{order.product_name}</td>
+                    <td>{order.quantity}</td>
+                    <td>{order.item_total}</td>
+                    <td>
+                      {order.seller_first_name} {order.seller_last_name}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No orders available.</p>
+          )}
+        </div>
+      )}
+
+      {/* Money Transfer Section */}
+      {activeSection === 'transfer' && (
+        <div className="section">
+          <h2 className="section-title">Money Transfer</h2>
+          <form className="form" onSubmit={(e) => e.preventDefault()}>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Receiver Account Number"
+              value={receiverAccount}
+              onChange={(e) => setReceiverAccount(e.target.value)}
+            />
+            <input
+              type="number"
+              className="form-input"
+              placeholder="Amount (PKR)"
+              value={transferAmount}
+              onChange={(e) => setTransferAmount(e.target.value)}
+            />
+            <button type="submit" className="btn btn-primary">
+              Transfer
+            </button>
+          </form>
+        </div>
       )}
     </div>
   );

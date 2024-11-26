@@ -1,0 +1,223 @@
+/* General container styling */
+.admin-dashboard-container {
+  max-width: 1200px;
+  margin: 50px auto;
+  padding: 20px;
+  background: linear-gradient(to bottom right, #ffffff, #f0f0f0);
+  border-radius: 12px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.2);
+  overflow: hidden;
+}
+
+/* Dashboard title */
+.dashboard-title {
+  font-size: 2.5rem;
+  font-weight: bold;
+  color: #4a148c;
+  text-align: center;
+  margin-bottom: 30px;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Tabs styling */
+.tabs-container {
+  display: flex;
+  justify-content: center;
+  gap: 15px;
+  margin-bottom: 30px;
+}
+
+.tab-btn {
+  background: #6200ea;
+  color: #fff;
+  font-size: 1rem;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+  box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.15);
+}
+
+.tab-btn:hover {
+  background: #3700b3;
+  transform: scale(1.1);
+  box-shadow: 0px 6px 10px rgba(0, 0, 0, 0.3);
+}
+
+.tab-btn:active {
+  transform: scale(1.05);
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.tab-btn.active {
+  background: #03dac5;
+  color: #000;
+}
+
+/* Section styling */
+.section {
+  margin: 30px 0;
+  background: #fff;
+  padding: 20px;
+  border-radius: 12px;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease-in-out;
+}
+
+.section:hover {
+  transform: translateY(-5px);
+}
+
+.section-title {
+  font-size: 1.8rem;
+  font-weight: bold;
+  color: #444;
+  margin-bottom: 15px;
+  position: relative;
+}
+
+.section-title::after {
+  content: '';
+  display: block;
+  width: 60px;
+  height: 4px;
+  background: #6200ea;
+  margin-top: 5px;
+}
+
+/* Form styling */
+.form {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.form-input {
+  flex: 1;
+  min-width: 250px;
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: all 0.2s ease-in-out;
+}
+
+.form-input:focus {
+  border-color: #6200ea;
+  box-shadow: 0 0 10px rgba(98, 0, 234, 0.5);
+}
+
+.form-input:hover {
+  box-shadow: 0 0 5px rgba(0, 0, 0, 0.2);
+}
+
+.btn {
+  padding: 10px 20px;
+  font-size: 1rem;
+  font-weight: bold;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.3s ease-in-out;
+}
+
+.btn-primary {
+  background: #6200ea;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #3700b3;
+  transform: scale(1.05);
+}
+
+.btn-danger {
+  background: #b00020;
+  color: #fff;
+}
+
+.btn-danger:hover {
+  background: #790000;
+  transform: scale(1.05);
+}
+
+.btn-secondary {
+  background: #03dac5;
+  color: #000;
+}
+
+.btn-secondary:hover {
+  background: #018786;
+  transform: scale(1.05);
+}
+
+.btn-success {
+  background: #4caf50;
+  color: #fff;
+}
+
+.btn-success:hover {
+  background: #2e7d32;
+  transform: scale(1.05);
+}
+
+/* Table styling */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-size: 1rem;
+  box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.data-table th,
+.data-table td {
+  text-align: left;
+  padding: 12px;
+  border-bottom: 1px solid #ddd;
+}
+
+.data-table th {
+  background: #6200ea;
+  color: #fff;
+  text-transform: uppercase;
+}
+
+.data-table tr:nth-child(even) {
+  background: #f9f9f9;
+}
+
+.data-table tr:hover {
+  background: rgba(98, 0, 234, 0.1);
+  transition: background 0.2s;
+}
+
+.no-data {
+  text-align: center;
+  color: #888;
+  font-size: 1.1rem;
+  margin-top: 15px;
+}
+
+/* Responsive Design */
+@media screen and (max-width: 768px) {
+  .admin-dashboard-container {
+    padding: 15px;
+  }
+
+  .tabs-container {
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .tab-btn {
+    width: 100%;
+    text-align: center;
+  }
+
+  .form {
+    flex-direction: column;
+    gap: 10px;
+  }
+}
