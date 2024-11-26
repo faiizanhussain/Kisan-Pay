@@ -2,9 +2,11 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { format } from 'date-fns';
+import '../styles/AdminDashboard.css';
+
 
 const AdminDashboard = () => {
-  // Existing state variables
+  // Existing state variables                                                                                                                                                                                                                                             
   const [custId, setCustId] = useState('');
   const [amount, setAmount] = useState('');
   const [transactions, setTransactions] = useState([]);
@@ -25,6 +27,8 @@ const AdminDashboard = () => {
   const [editDescription, setEditDescription] = useState('');
   const [editBasePrice, setEditBasePrice] = useState('');
 
+
+  const [activeSection, setActiveSection] = useState('addMoney');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -187,280 +191,296 @@ const AdminDashboard = () => {
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
+    return (
+    <div className="admin-dashboard-container">
+      <h1 className="dashboard-title">Admin Dashboard</h1>
 
-  return (
-    <div>
-      <h1>Admin Dashboard</h1>
+      {/* Navigation Tabs */}
+      <div className="tabs-container">
+        <button className="tab-btn" onClick={() => setActiveSection('addMoney')}>Add Money</button>
+        <button className="tab-btn" onClick={() => setActiveSection('manageProducts')}>Manage Products</button>
+        <button className="tab-btn" onClick={() => setActiveSection('transactions')}>Transactions</button>
+        <button className="tab-btn" onClick={() => setActiveSection('inventories')}>Inventories</button>
+        <button className="tab-btn" onClick={() => setActiveSection('orders')}>Orders</button>
+        <button className="tab-btn" onClick={() => setActiveSection('loanRequests')}>Loan Requests</button>
+      </div>
 
-      {/* Existing sections... */}
-
-      <h2>Add Money to Customer Account</h2>
-      <form onSubmit={handleAddMoney}>
-        <input
-          type="text"
-          placeholder="Customer ID"
-          value={custId}
-          onChange={(e) => setCustId(e.target.value)}
-          required
-        />
-        <input
-          type="number"
-          placeholder="Amount (PKR)"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          required
-        />
-        <button type="submit">Add Money</button>
-      </form>
-
-      {/* Section for adding products */}
-      <h2>Add New Product</h2>
-      <form onSubmit={handleAddProduct}>
-        <input
-          type="text"
-          placeholder="Product Name"
-          value={productName}
-          onChange={(e) => setProductName(e.target.value)}
-          required
-        />
-        <textarea
-          placeholder="Description"
-          value={description}
-          onChange={(e) => setDescription(e.target.value)}
-        ></textarea>
-        <input
-          type="number"
-          placeholder="Base Price (PKR)"
-          value={basePrice}
-          onChange={(e) => setBasePrice(e.target.value)}
-          required
-        />
-        <button type="submit">Add Product</button>
-      </form>
-
-      {/* Display the list of products */}
-      <h2>Product List</h2>
-      {products.length > 0 ? (
-        <table>
-          <thead>
-            <tr>
-              <th>Product ID</th>
-              <th>Name</th>
-              <th>Description</th>
-              <th>Base Price</th>
-              <th>Actions</th> {/* Added Actions column */}
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((product) => (
-              <tr key={product.product_id}>
-                <td>{product.product_id}</td>
-                <td>{product.product_name}</td>
-                <td>{product.description || 'N/A'}</td>
-                <td>{product.base_price} PKR</td>
-                <td>
-                  <button onClick={() => handleEditProduct(product)}>Edit</button>
-                  <button onClick={() => handleDeleteProduct(product.product_id)}>
-                    Delete
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No products available.</p>
+      {/* Conditional Rendering Based on Active Section */}
+      {activeSection === 'addMoney' && (
+        <section className="section">
+          <h2 className="section-title">Add Money to Customer Account</h2>
+          <form className="form" onSubmit={handleAddMoney}>
+            <input
+              className="form-input"
+              type="text"
+              placeholder="Customer ID"
+              value={custId}
+              onChange={(e) => setCustId(e.target.value)}
+              required
+            />
+            <input
+              className="form-input"
+              type="number"
+              placeholder="Amount (PKR)"
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              required
+            />
+            <button type="submit" className="btn btn-primary">
+              Add Money
+            </button>
+          </form>
+        </section>
       )}
 
-      {/* Edit Product Form */}
-      {editingProduct && (
-        <div>
-          <h2>Edit Product</h2>
-          <form onSubmit={handleUpdateProduct}>
+      {activeSection === 'manageProducts' && (
+        <section className="section">
+          <h2 className="section-title">Manage Products</h2>
+          <form className="form" onSubmit={handleAddProduct}>
             <input
+              className="form-input"
               type="text"
               placeholder="Product Name"
-              value={editProductName}
-              onChange={(e) => setEditProductName(e.target.value)}
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
               required
             />
             <textarea
+              className="form-input"
               placeholder="Description"
-              value={editDescription}
-              onChange={(e) => setEditDescription(e.target.value)}
+              value={description}
+              onChange={(e) => setDescription(e.target.value)}
             ></textarea>
             <input
+              className="form-input"
               type="number"
               placeholder="Base Price (PKR)"
-              value={editBasePrice}
-              onChange={(e) => setEditBasePrice(e.target.value)}
+              value={basePrice}
+              onChange={(e) => setBasePrice(e.target.value)}
               required
             />
-            <button type="submit">Update Product</button>
-            <button type="button" onClick={() => setEditingProduct(null)}>
-              Cancel
+            <button type="submit" className="btn btn-primary">
+              Add Product
             </button>
           </form>
-        </div>
+
+          <h3 className="sub-title">Product List</h3>
+          {products.length > 0 ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Product ID</th>
+                  <th>Name</th>
+                  <th>Description</th>
+                  <th>Base Price</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {products.map((product) => (
+                  <tr key={product.product_id}>
+                    <td>{product.product_id}</td>
+                    <td>{product.product_name}</td>
+                    <td>{product.description || 'N/A'}</td>
+                    <td>{product.base_price} PKR</td>
+                    <td>
+                      <button
+                        className="btn btn-secondary"
+                        onClick={() => handleEditProduct(product)}
+                      >
+                        Edit
+                      </button>
+                      <button
+                        className="btn btn-danger"
+                        onClick={() => handleDeleteProduct(product.product_id)}
+                      >
+                        Delete
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="no-data">No products available.</p>
+          )}
+        </section>
       )}
 
-      {/* Existing sections... */}
-
-      {/* Transactions */}
-      <h2>All Transactions</h2>
-      {/* Transactions table */}
-      <table>
-        <thead>
-          <tr>
-            <th>Transaction ID</th>
-            <th>Sender</th>
-            <th>Receiver</th>
-            <th>Amount</th>
-            <th>Date</th>
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((transaction) => (
-            <tr key={transaction.transaction_id}>
-              <td>{transaction.transaction_id}</td>
-              <td>{transaction.sender_id}</td>
-              <td>{transaction.receiver_id}</td>
-              <td>{transaction.amount} PKR</td>
-              <td>
-                {format(
-                  new Date(transaction.date_time),
-                  'MMM dd, yyyy HH:mm'
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* All Inventories */}
-      <h2>All Inventories</h2>
-      {inventories.length > 0 ? (
-        <table>
-          <thead>
-            <tr>
-              <th>Inventory ID</th>
-              <th>Supplier ID</th>
-              <th>Supplier Name</th>
-              <th>Product Name</th>
-              <th>Quantity</th>
-              <th>Price (PKR)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {inventories.map((inventory) => (
-              <tr key={inventory.inventory_id}>
-                <td>{inventory.inventory_id}</td>
-                <td>{inventory.supplier_id}</td>
-                <td>
-                  {inventory.supplier_first_name} {inventory.supplier_last_name}
-                </td>
-                <td>{inventory.product_name}</td>
-                <td>{inventory.quantity}</td>
-                <td>{inventory.price}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No inventories available.</p>
+      {activeSection === 'transactions' && (
+        <section className="section">
+          <h2 className="section-title">All Transactions</h2>
+          {transactions.length > 0 ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Transaction ID</th>
+                  <th>Sender</th>
+                  <th>Receiver</th>
+                  <th>Amount</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody>
+                {transactions.map((transaction) => (
+                  <tr key={transaction.transaction_id}>
+                    <td>{transaction.transaction_id}</td>
+                    <td>{transaction.sender_id}</td>
+                    <td>{transaction.receiver_id}</td>
+                    <td>{transaction.amount} PKR</td>
+                    <td>
+                      {format(
+                        new Date(transaction.date_time),
+                        'MMM dd, yyyy HH:mm'
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="no-data">No transactions available.</p>
+          )}
+        </section>
       )}
 
-      {/* All Orders */}
-      <h2>All Orders</h2>
-      {orders.length > 0 ? (
-        <table>
-          <thead>
-            <tr>
-              <th>Order ID</th>
-              <th>Order Date</th>
-              <th>Buyer ID</th>
-              <th>Buyer Name</th>
-              <th>Supplier ID</th>
-              <th>Supplier Name</th>
-              <th>Product Name</th>
-              <th>Quantity</th>
-              <th>Price per Unit (PKR)</th>
-              <th>Total Price (PKR)</th>
-            </tr>
-          </thead>
-          <tbody>
-            {orders.map((order) => (
-              <tr key={order.order_detail_id}>
-                <td>{order.order_id}</td>
-                <td>{new Date(order.order_date).toLocaleDateString()}</td>
-                <td>{order.buyer_id}</td>
-                <td>
-                  {order.buyer_first_name} {order.buyer_last_name}
-                </td>
-                <td>{order.supplier_id}</td>
-                <td>
-                  {order.supplier_first_name} {order.supplier_last_name}
-                </td>
-                <td>{order.product_name}</td>
-                <td>{order.quantity}</td>
-                <td>{order.price}</td>
-                <td>{order.item_total}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      ) : (
-        <p>No orders available.</p>
+      {activeSection === 'inventories' && (
+        <section className="section">
+          <h2 className="section-title">All Inventories</h2>
+          {inventories.length > 0 ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Inventory ID</th>
+                  <th>Supplier ID</th>
+                  <th>Supplier Name</th>
+                  <th>Product Name</th>
+                  <th>Quantity</th>
+                  <th>Price (PKR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventories.map((inventory) => (
+                  <tr key={inventory.inventory_id}>
+                    <td>{inventory.inventory_id}</td>
+                    <td>{inventory.supplier_id}</td>
+                    <td>
+                      {inventory.supplier_first_name}{' '}
+                      {inventory.supplier_last_name}
+                    </td>
+                    <td>{inventory.product_name}</td>
+                    <td>{inventory.quantity}</td>
+                    <td>{inventory.price}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="no-data">No inventories available.</p>
+          )}
+        </section>
       )}
 
-      {/* Loan Requests */}
-      <h2>Loan Requests</h2>
-      {/* Loans table */}
-      <table>
-        <thead>
-          <tr>
-            <th>Loan ID</th>
-            <th>Account Number</th>
-            <th>Amount</th>
-            <th>Status</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
-          {loans.map((loan) => (
-            <tr key={loan.loan_id}>
-              <td>{loan.loan_id}</td>
-              <td>{loan.acc_no}</td>
-              <td>{loan.loan_amt} PKR</td>
-              <td>{loan.status || 'Pending'}</td>
-              <td>
-                {loan.status === 'pending' && (
-                  <>
-                    <button
-                      onClick={() =>
-                        handleLoanApproval(loan.loan_id, 'approve')
-                      }
-                    >
-                      Approve
-                    </button>
-                    <button
-                      onClick={() =>
-                        handleLoanApproval(loan.loan_id, 'reject')
-                      }
-                    >
-                      Reject
-                    </button>
-                  </>
-                )}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      {activeSection === 'orders' && (
+        <section className="section">
+          <h2 className="section-title">All Orders</h2>
+          {orders.length > 0 ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Order ID</th>
+                  <th>Order Date</th>
+                  <th>Buyer ID</th>
+                  <th>Buyer Name</th>
+                  <th>Supplier ID</th>
+                  <th>Supplier Name</th>
+                  <th>Product Name</th>
+                  <th>Quantity</th>
+                  <th>Price per Unit (PKR)</th>
+                  <th>Total Price (PKR)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {orders.map((order) => (
+                  <tr key={order.order_detail_id}>
+                    <td>{order.order_id}</td>
+                    <td>{new Date(order.order_date).toLocaleDateString()}</td>
+                    <td>{order.buyer_id}</td>
+                    <td>
+                      {order.buyer_first_name} {order.buyer_last_name}
+                    </td>
+                    <td>{order.supplier_id}</td>
+                    <td>
+                      {order.supplier_first_name} {order.supplier_last_name}
+                    </td>
+                    <td>{order.product_name}</td>
+                    <td>{order.quantity}</td>
+                    <td>{order.price}</td>
+                    <td>{order.item_total}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="no-data">No orders available.</p>
+          )}
+        </section>
+      )}
 
-      {/* Existing code ends */}
+      {activeSection === 'loanRequests' && (
+        <section className="section">
+          <h2 className="section-title">Loan Requests</h2>
+          {loans.length > 0 ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Loan ID</th>
+                  <th>Account Number</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {loans.map((loan) => (
+                  <tr key={loan.loan_id}>
+                    <td>{loan.loan_id}</td>
+                    <td>{loan.acc_no}</td>
+                    <td>{loan.loan_amt} PKR</td>
+                    <td>{loan.status || 'Pending'}</td>
+                    <td>
+                      {loan.status === 'pending' && (
+                        <>
+                          <button
+                            className="btn btn-success"
+                            onClick={() =>
+                              handleLoanApproval(loan.loan_id, 'approve')
+                            }
+                          >
+                            Approve
+                          </button>
+                          <button
+                            className="btn btn-danger"
+                            onClick={() =>
+                              handleLoanApproval(loan.loan_id, 'reject')
+                            }
+                          >
+                            Reject
+                          </button>
+                        </>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="no-data">No loan requests available.</p>
+          )}
+        </section>
+      )}
     </div>
   );
-};
+}
 
 export default AdminDashboard;

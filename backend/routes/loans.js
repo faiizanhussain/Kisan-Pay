@@ -12,9 +12,7 @@ router.get('/', async (req, res) => {
         const query = acc_no
             ? 'SELECT * FROM Loans WHERE acc_no = $1'
             : 'SELECT * FROM Loans';
-        const values = acc_no ? [acc_no] : []; // Use the raw acc_no value without quotes
-
-        console.log('Received acc_no:', acc_no); // Debugging log
+        const values = acc_no ? [acc_no] : [];
 
         const loans = await pool.query(query, values);
         res.json(loans.rows);
@@ -55,16 +53,22 @@ router.put('/:loan_id/reject', async (req, res) => {
 
 router.post('/', async (req, res) => {
     const { loan_amt, acc_no, manager_id, start_date, due_date } = req.body;
+
+    console.log('Request Body:', req.body); // Debugging log
     try {
         const newLoan = await pool.query(
-            'INSERT INTO Loans (loan_amt, acc_no, manager_id, start_date, due_date) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-            [loan_amt, acc_no, manager_id, start_date, due_date]
+            'INSERT INTO Loans (loan_amt, acc_no, manager_id, start_date, due_date, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+            [loan_amt, acc_no, manager_id, start_date, due_date, 'pending']
         );
+        console.log('Inserted Loan:', newLoan.rows[0]); // Debugging log
         res.json(newLoan.rows[0]);
     } catch (err) {
-        res.status(500).json({ error: err.message });
+        console.error('Error inserting loan:', err.message);
+        res.status(500).json({ error: 'Failed to insert loan', message: err.message });
     }
 });
+
+
 
 // Update a loan details
 router.put('/:id', async (req, res) => {
@@ -160,6 +164,21 @@ router.post('/:loan_id/repay', async (req, res) => {
         res.status(500).json({ error: 'Failed to process repayment', message: err.message });
     }
 });
+// router.get('/summary', async (req, res) => {
+//     try {
+//         const result = await pool.query(`
+//             SELECT
+//                 COUNT(CASE WHEN status = 'approved' THEN 1 END) AS approved,
+//                 COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pending,
+//                 COUNT(CASE WHEN status = 'rejected' THEN 1 END) AS rejected
+//             FROM loans;
+//         `);
+//         res.json(result.rows[0]);
+//     } catch (err) {
+//         res.status(500).json({ error: err.message });
+//     }
+// });
+
 
 
 export default router;
