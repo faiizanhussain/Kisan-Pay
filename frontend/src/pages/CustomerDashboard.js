@@ -1,8 +1,14 @@
-// Import necessary modules and hooks
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../styles/CustomerDashboard.css';
+
+// Import all section components
+import ProfileSection from './ProfileSection';
+import BalanceSection from './BalanceSection';
+import TransactionsSection from './TransactionsSection';
+import InventorySection from './InventorySection';
+import MoneyTransferSection from './MoneyTransferSection';
 
 const CustomerDashboard = () => {
   const navigate = useNavigate();
@@ -10,32 +16,19 @@ const CustomerDashboard = () => {
   // State variables
   const [balance, setBalance] = useState(null);
   const [transactions, setTransactions] = useState([]);
-  const [receiverAccount, setReceiverAccount] = useState('');
-  const [transferAmount, setTransferAmount] = useState('');
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
   const [accountExists, setAccountExists] = useState(false);
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
-
-  // New state variables for inventory management
-  const [productName, setProductName] = useState('');
-  const [quantity, setQuantity] = useState('');
-  const [price, setPrice] = useState('');
-  const [inventoryMessage, setInventoryMessage] = useState('');
-  const [inventoryError, setInventoryError] = useState('');
   const [inventoryItems, setInventoryItems] = useState([]);
+  const [activeSection, setActiveSection] = useState('profile');
+  const [orders, setOrders] = useState([]);
 
-  // State variables for purchase functionality
+  // Marketplace and Purchase-related states
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [purchaseQuantity, setPurchaseQuantity] = useState('');
   const [purchaseError, setPurchaseError] = useState('');
   const [purchaseMessage, setPurchaseMessage] = useState('');
-
-  // State variable for orders
-  const [activeSection, setActiveSection] = useState('profile');
-  const [orders, setOrders] = useState([]);
 
   useEffect(() => {
     const role = localStorage.getItem('role');
@@ -94,7 +87,6 @@ const CustomerDashboard = () => {
         setLoading(false);
       } catch (err) {
         console.error('Error in fetchAccountData:', err.message || err.response?.data?.message);
-        setError('Failed to fetch account data');
         setLoading(false);
       }
     };
@@ -102,114 +94,29 @@ const CustomerDashboard = () => {
     fetchAccountData();
   }, [navigate]);
 
-  const handleCreateAccount = async () => {
+  const handleTransferComplete = async () => {
     const cust_id = localStorage.getItem('cust_id');
-
-    if (!cust_id) {
-      alert('Customer ID is missing. Please log in again.');
-      navigate('/login');
-      return;
-    }
-
     try {
-      const response = await axios.post('http://localhost:5000/api/customers/create-account', { cust_id });
-      alert(response.data.message);
-      setAccountExists(true);
-      setBalance(0);
-    } catch (err) {
-      console.error('Error creating account:', err.response?.data?.message || err.message);
-      alert(err.response?.data?.message || 'Failed to create account');
-    }
-  };
-
-  const handleTransfer = async (e) => {
-    e.preventDefault();
-
-    setMessage('');
-    setError('');
-
-    if (!receiverAccount || parseFloat(transferAmount) <= 0) {
-      setError('Please provide valid receiver account and amount');
-      return;
-    }
-
-    try {
-      const cust_id = localStorage.getItem('cust_id');
-      if (!cust_id) {
-        alert('Customer ID is missing. Please log in again.');
-        navigate('/login');
-        return;
-      }
-
-      const response = await axios.post('http://localhost:5000/api/customers/transfer', {
-        cust_id,
-        receiver_account: receiverAccount,
-        amount: parseFloat(transferAmount),
-      });
-
-      setMessage(response.data.message);
-      setReceiverAccount('');
-      setTransferAmount('');
-
-      // Refresh balance and transactions
+      // Refresh balance
       const balanceResponse = await axios.get('http://localhost:5000/api/customers/balance', {
         params: { cust_id },
       });
       setBalance(balanceResponse.data.balance);
 
+      // Refresh transactions
       const transactionsResponse = await axios.get('http://localhost:5000/api/customers/transactions', {
         params: { cust_id },
       });
       setTransactions(transactionsResponse.data);
     } catch (err) {
-      setError(err.response?.data?.message || 'Transfer failed');
-    }
-  };
-
-  const handleAddToInventory = async (e) => {
-    e.preventDefault();
-    setInventoryMessage('');
-    setInventoryError('');
-
-    const cust_id = localStorage.getItem('cust_id');
-
-    if (!cust_id) {
-      alert('Customer ID is missing. Please log in again.');
-      navigate('/login');
-      return;
-    }
-
-    if (!productName || !quantity || !price) {
-      setInventoryError('All fields are required.');
-      return;
-    }
-
-    try {
-      const response = await axios.post('http://localhost:5000/api/customers/inventory/add', {
-        cust_id,
-        product_name: productName,
-        quantity: parseInt(quantity),
-        price: parseFloat(price),
-      });
-      setInventoryMessage(response.data.message);
-      // Reset form fields
-      setProductName('');
-      setQuantity('');
-      setPrice('');
-
-      // Refresh inventory items
-      const inventoryResponse = await axios.get('http://localhost:5000/api/customers/inventory', {
-        params: { cust_id },
-      });
-      setInventoryItems(inventoryResponse.data);
-    } catch (err) {
-      setInventoryError(err.response?.data?.message || 'Failed to add product to inventory');
+      console.error('Error refreshing data:', err.message);
     }
   };
 
   const handlePurchaseClick = (item) => {
     setSelectedProduct(item);
     setShowPurchaseForm(true);
+    // Previous code continues...
     setPurchaseQuantity('');
     setPurchaseError('');
     setPurchaseMessage('');
@@ -260,6 +167,7 @@ const CustomerDashboard = () => {
   if (loading) {
     return <p>Loading...</p>;
   }
+
   return (
     <div className="customer-dashboard-container">
       <h1 className="dashboard-title">Customer Dashboard</h1>
@@ -316,151 +224,37 @@ const CustomerDashboard = () => {
         </button>
       </div>
 
-      {/* Profile Section */}
-      {activeSection === 'profile' && (
-        <div className="section">
-          <h2 className="section-title">Profile Details</h2>
-          {profile ? (
-            <ul>
-              <li>
-                <strong>First Name:</strong> {profile.f_name}
-              </li>
-              <li>
-                <strong>Last Name:</strong> {profile.l_name}
-              </li>
-              <li>
-                <strong>Email:</strong> {profile.email}
-              </li>
-              <li>
-                <strong>Phone:</strong> {profile.phone}
-              </li>
-              <li>
-                <strong>CNIC:</strong> {profile.cnic}
-              </li>
-              <li>
-                <strong>Username:</strong> {profile.u_name}
-              </li>
-              <li>
-                <strong>Role:</strong> {profile.role}
-              </li>
-            </ul>
-          ) : (
-            <p>No profile data available.</p>
-          )}
-        </div>
-      )}
-
-      {/* Balance Section */}
+      {/* Conditional Rendering of Sections */}
+      {activeSection === 'profile' && <ProfileSection profile={profile} />}
+      
       {activeSection === 'balance' && (
-        <div className="section">
-          <h2 className="section-title">Account Balance</h2>
-          {accountExists ? (
-            <p>{balance !== null ? `${balance} PKR` : 'Loading...'}</p>
-          ) : (
-            <div>
-              <p>You don't have an account yet.</p>
-              <button onClick={handleCreateAccount} className="btn btn-primary">
-                Create Account
-              </button>
-            </div>
-          )}
-        </div>
+        <BalanceSection 
+          accountExists={accountExists}
+          balance={balance}
+          navigate={navigate}
+          setAccountExists={setAccountExists}
+          setBalance={setBalance}
+        />
       )}
-
-      {/* Transactions Section */}
+      
       {activeSection === 'transactions' && (
-        <div className="section">
-          <h2 className="section-title">Transaction History</h2>
-          {transactions.length > 0 ? (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>ID</th>
-                  <th>Sender</th>
-                  <th>Receiver</th>
-                  <th>Amount</th>
-                  <th>Date</th>
-                </tr>
-              </thead>
-              <tbody>
-                {transactions.map((txn) => (
-                  <tr key={txn.transaction_id}>
-                    <td>{txn.transaction_id}</td>
-                    <td>{txn.sender_id}</td>
-                    <td>{txn.receiver_id}</td>
-                    <td>{txn.amount} PKR</td>
-                    <td>{new Date(txn.date_time).toLocaleString()}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No transactions found.</p>
-          )}
-        </div>
+        <TransactionsSection transactions={transactions} />
       )}
-
-      {/* Seller Inventory Section */}
+      
       {activeSection === 'inventory' && profile?.role === 'Seller' && (
-        <div className="section">
-          <h2 className="section-title">Your Inventory</h2>
-
-          {/* Add Product Form */}
-          <form className="form" onSubmit={handleAddToInventory}>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Product Name"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-            />
-            <input
-              type="number"
-              className="form-input"
-              placeholder="Quantity"
-              value={quantity}
-              onChange={(e) => setQuantity(e.target.value)}
-            />
-            <input
-              type="number"
-              className="form-input"
-              placeholder="Price (PKR)"
-              value={price}
-              onChange={(e) => setPrice(e.target.value)}
-            />
-            <button type="submit" className="btn btn-primary">
-              Add to Inventory
-            </button>
-          </form>
-          {inventoryMessage && <p className="success-message">{inventoryMessage}</p>}
-          {inventoryError && <p className="error-message">{inventoryError}</p>}
-
-          {/* Inventory Items Table */}
-          {inventoryItems.length > 0 ? (
-            <table className="data-table">
-              <thead>
-                <tr>
-                  <th>Inventory ID</th>
-                  <th>Product Name</th>
-                  <th>Quantity</th>
-                  <th>Price (PKR)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {inventoryItems.map((item) => (
-                  <tr key={item.inventory_id}>
-                    <td>{item.inventory_id}</td>
-                    <td>{item.product_name}</td>
-                    <td>{item.quantity}</td>
-                    <td>{item.price}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          ) : (
-            <p>No items in inventory.</p>
-          )}
-        </div>
+        <InventorySection 
+          profile={profile}
+          inventoryItems={inventoryItems}
+          navigate={navigate}
+          setInventoryItems={setInventoryItems}
+        />
+      )}
+      
+      {activeSection === 'transfer' && (
+        <MoneyTransferSection 
+          navigate={navigate} 
+          onTransferComplete={handleTransferComplete} 
+        />
       )}
 
       {/* Marketplace Section for Buyers */}
@@ -514,7 +308,11 @@ const CustomerDashboard = () => {
                   <button type="submit" className="btn btn-primary">
                     Confirm Purchase
                   </button>
-                  <button onClick={() => setShowPurchaseForm(false)} className="btn btn-secondary">
+                  <button 
+                    type="button" 
+                    onClick={() => setShowPurchaseForm(false)} 
+                    className="btn btn-secondary"
+                  >
                     Cancel
                   </button>
                 </form>
@@ -560,34 +358,6 @@ const CustomerDashboard = () => {
           ) : (
             <p>No orders available.</p>
           )}
-        </div>
-      )}
-
-      {/* Money Transfer Section */}
-      {activeSection === 'transfer' && (
-        <div className="section">
-          <h2 className="section-title">Money Transfer</h2>
-          <form className="form" onSubmit={handleTransfer}>
-            <input
-              type="text"
-              className="form-input"
-              placeholder="Receiver Account Number"
-              value={receiverAccount}
-              onChange={(e) => setReceiverAccount(e.target.value)}
-            />
-            <input
-              type="number"
-              className="form-input"
-              placeholder="Amount (PKR)"
-              value={transferAmount}
-              onChange={(e) => setTransferAmount(e.target.value)}
-            />
-            <button type="submit" className="btn btn-primary">
-              Transfer
-            </button>
-          </form>
-          {message && <p className="success-message">{message}</p>}
-          {error && <p className="error-message">{error}</p>}
         </div>
       )}
     </div>
