@@ -295,6 +295,67 @@ const AdminDashboard = () => {
               Add Product
             </button>
           </form>
+           {/* Edit Product Form */}
+    {editingProduct && (
+      <div className="mt-8">
+        <h2 className="section-title">Edit Product</h2>
+        <form className="form" onSubmit={handleUpdateProduct}>
+          <div className="mb-4">
+            <label htmlFor="editProductName" className="block text-gray-700 font-medium mb-2">
+              Product Name
+            </label>
+            <input
+              id="editProductName"
+              className="form-input"
+              type="text"
+              placeholder="Product Name"
+              value={editProductName}
+              onChange={(e) => setEditProductName(e.target.value)}
+              required
+            />
+          </div>
+          <div className="mb-4">
+            <label htmlFor="editDescription" className="block text-gray-700 font-medium mb-2">
+              Description
+            </label>
+            <textarea
+              id="editDescription"
+              className="form-input"
+              placeholder="Description"
+              value={editDescription}
+              onChange={(e) => setEditDescription(e.target.value)}
+            ></textarea>
+          </div>
+          <div className="mb-4">
+            <label htmlFor="editBasePrice" className="block text-gray-700 font-medium mb-2">
+              Base Price (PKR)
+            </label>
+            <input
+              id="editBasePrice"
+              className="form-input"
+              type="number"
+              placeholder="Base Price (PKR)"
+              value={editBasePrice}
+              onChange={(e) => setEditBasePrice(e.target.value)}
+              required
+            />
+          </div>
+          <div className="flex space-x-4">
+            <button type="submit" className="btn btn-primary">
+              Update Product
+            </button>
+            <button
+              type="button"
+              onClick={() => setEditingProduct(null)}
+              className="btn btn-secondary"
+            >
+              Cancel
+            </button>
+          </div>
+        </form>
+      </div>
+    )}
+
 
           {/* Product List */}
           <h3 className="sub-title">Product List</h3>
