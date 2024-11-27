@@ -1,5 +1,3 @@
-// loans.js
-
 import express from 'express';
 import pool from '../config/db.js';
 
@@ -58,6 +56,7 @@ router.post('/', async (req, res) => {
     try {
         const newLoan = await pool.query(
             'INSERT INTO Loans (loan_amt, acc_no, manager_id, start_date, due_date, status) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *',
+
             [loan_amt, acc_no, manager_id, start_date, due_date, 'pending']
         );
         console.log('Inserted Loan:', newLoan.rows[0]); // Debugging log
@@ -164,21 +163,5 @@ router.post('/:loan_id/repay', async (req, res) => {
         res.status(500).json({ error: 'Failed to process repayment', message: err.message });
     }
 });
-// router.get('/summary', async (req, res) => {
-//     try {
-//         const result = await pool.query(`
-//             SELECT
-//                 COUNT(CASE WHEN status = 'approved' THEN 1 END) AS approved,
-//                 COUNT(CASE WHEN status = 'pending' THEN 1 END) AS pending,
-//                 COUNT(CASE WHEN status = 'rejected' THEN 1 END) AS rejected
-//             FROM loans;
-//         `);
-//         res.json(result.rows[0]);
-//     } catch (err) {
-//         res.status(500).json({ error: err.message });
-//     }
-// });
-
-
 
 export default router;
