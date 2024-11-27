@@ -238,7 +238,7 @@ router.post('/transfer', async (req, res) => {
     await client.query('BEGIN');
 
     // Call the stored procedure
-    await client.query('SELECT transfer_funds($1, $2, $3)', [
+    const result = await client.query('SELECT transfer_funds($1, $2, $3)', [
       parseInt(cust_id),
       parseInt(receiver_account),
       parseFloat(amount),

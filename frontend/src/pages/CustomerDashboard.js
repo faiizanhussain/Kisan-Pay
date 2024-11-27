@@ -15,7 +15,7 @@ const CustomerDashboard = () => {
   const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [accountExists, setAccountExists] = useState(false);
-  const [loading, setLoading] =useState(true);
+  const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState(null);
 
   // New state variables for inventory management
@@ -34,7 +34,7 @@ const CustomerDashboard = () => {
   const [purchaseMessage, setPurchaseMessage] = useState('');
 
   // State variable for orders
-  const [activeSection, setActiveSection] = useState('profile'); 
+  const [activeSection, setActiveSection] = useState('profile');
   const [orders, setOrders] = useState([]);
 
   useEffect(() => {
@@ -124,6 +124,7 @@ const CustomerDashboard = () => {
 
   const handleTransfer = async (e) => {
     e.preventDefault();
+
     setMessage('');
     setError('');
 
@@ -134,11 +135,18 @@ const CustomerDashboard = () => {
 
     try {
       const cust_id = localStorage.getItem('cust_id');
+      if (!cust_id) {
+        alert('Customer ID is missing. Please log in again.');
+        navigate('/login');
+        return;
+      }
+
       const response = await axios.post('http://localhost:5000/api/customers/transfer', {
         cust_id,
         receiver_account: receiverAccount,
         amount: parseFloat(transferAmount),
       });
+
       setMessage(response.data.message);
       setReceiverAccount('');
       setTransferAmount('');
@@ -158,7 +166,6 @@ const CustomerDashboard = () => {
     }
   };
 
-  // Function to handle adding product to inventory
   const handleAddToInventory = async (e) => {
     e.preventDefault();
     setInventoryMessage('');
@@ -200,7 +207,6 @@ const CustomerDashboard = () => {
     }
   };
 
-  // Function to handle purchase click
   const handlePurchaseClick = (item) => {
     setSelectedProduct(item);
     setShowPurchaseForm(true);
@@ -209,7 +215,6 @@ const CustomerDashboard = () => {
     setPurchaseMessage('');
   };
 
-  // Function to handle purchase submission
   const handlePurchase = async (e) => {
     e.preventDefault();
     setPurchaseError('');
@@ -288,12 +293,20 @@ const CustomerDashboard = () => {
           </button>
         )}
         {profile?.role === 'Buyer' && (
-          <button
-            className={`nav-button ${activeSection === 'orders' && 'active'}`}
-            onClick={() => setActiveSection('orders')}
-          >
-            Orders
-          </button>
+          <>
+            <button
+              className={`nav-button ${activeSection === 'marketplace' && 'active'}`}
+              onClick={() => setActiveSection('marketplace')}
+            >
+              Marketplace
+            </button>
+            <button
+              className={`nav-button ${activeSection === 'orders' && 'active'}`}
+              onClick={() => setActiveSection('orders')}
+            >
+              Orders
+            </button>
+          </>
         )}
         <button
           className={`nav-button ${activeSection === 'transfer' && 'active'}`}
@@ -309,13 +322,27 @@ const CustomerDashboard = () => {
           <h2 className="section-title">Profile Details</h2>
           {profile ? (
             <ul>
-              <li><strong>First Name:</strong> {profile.f_name}</li>
-              <li><strong>Last Name:</strong> {profile.l_name}</li>
-              <li><strong>Email:</strong> {profile.email}</li>
-              <li><strong>Phone:</strong> {profile.phone}</li>
-              <li><strong>CNIC:</strong> {profile.cnic}</li>
-              <li><strong>Username:</strong> {profile.u_name}</li>
-              <li><strong>Role:</strong> {profile.role}</li>
+              <li>
+                <strong>First Name:</strong> {profile.f_name}
+              </li>
+              <li>
+                <strong>Last Name:</strong> {profile.l_name}
+              </li>
+              <li>
+                <strong>Email:</strong> {profile.email}
+              </li>
+              <li>
+                <strong>Phone:</strong> {profile.phone}
+              </li>
+              <li>
+                <strong>CNIC:</strong> {profile.cnic}
+              </li>
+              <li>
+                <strong>Username:</strong> {profile.u_name}
+              </li>
+              <li>
+                <strong>Role:</strong> {profile.role}
+              </li>
             </ul>
           ) : (
             <p>No profile data available.</p>
@@ -327,7 +354,16 @@ const CustomerDashboard = () => {
       {activeSection === 'balance' && (
         <div className="section">
           <h2 className="section-title">Account Balance</h2>
-          <p>{balance !== null ? `${balance} PKR` : 'Loading...'}</p>
+          {accountExists ? (
+            <p>{balance !== null ? `${balance} PKR` : 'Loading...'}</p>
+          ) : (
+            <div>
+              <p>You don't have an account yet.</p>
+              <button onClick={handleCreateAccount} className="btn btn-primary">
+                Create Account
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -368,6 +404,38 @@ const CustomerDashboard = () => {
       {activeSection === 'inventory' && profile?.role === 'Seller' && (
         <div className="section">
           <h2 className="section-title">Your Inventory</h2>
+
+          {/* Add Product Form */}
+          <form className="form" onSubmit={handleAddToInventory}>
+            <input
+              type="text"
+              className="form-input"
+              placeholder="Product Name"
+              value={productName}
+              onChange={(e) => setProductName(e.target.value)}
+            />
+            <input
+              type="number"
+              className="form-input"
+              placeholder="Quantity"
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+            />
+            <input
+              type="number"
+              className="form-input"
+              placeholder="Price (PKR)"
+              value={price}
+              onChange={(e) => setPrice(e.target.value)}
+            />
+            <button type="submit" className="btn btn-primary">
+              Add to Inventory
+            </button>
+          </form>
+          {inventoryMessage && <p className="success-message">{inventoryMessage}</p>}
+          {inventoryError && <p className="error-message">{inventoryError}</p>}
+
+          {/* Inventory Items Table */}
           {inventoryItems.length > 0 ? (
             <table className="data-table">
               <thead>
@@ -391,6 +459,69 @@ const CustomerDashboard = () => {
             </table>
           ) : (
             <p>No items in inventory.</p>
+          )}
+        </div>
+      )}
+
+      {/* Marketplace Section for Buyers */}
+      {activeSection === 'marketplace' && profile?.role === 'Buyer' && (
+        <div className="section">
+          <h2 className="section-title">Marketplace</h2>
+          {inventoryItems.length > 0 ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Inventory ID</th>
+                  <th>Product Name</th>
+                  <th>Quantity Available</th>
+                  <th>Price (PKR)</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {inventoryItems.map((item) => (
+                  <tr key={item.inventory_id}>
+                    <td>{item.inventory_id}</td>
+                    <td>{item.product_name}</td>
+                    <td>{item.quantity}</td>
+                    <td>{item.price}</td>
+                    <td>
+                      <button onClick={() => handlePurchaseClick(item)} className="btn btn-primary">
+                        Purchase
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No products available for purchase.</p>
+          )}
+
+          {/* Purchase Form Modal */}
+          {showPurchaseForm && (
+            <div className="modal">
+              <div className="modal-content">
+                <h3>Purchase {selectedProduct.product_name}</h3>
+                <form onSubmit={handlePurchase}>
+                  <input
+                    type="number"
+                    className="form-input"
+                    placeholder="Quantity"
+                    value={purchaseQuantity}
+                    onChange={(e) => setPurchaseQuantity(e.target.value)}
+                  />
+                  <button type="submit" className="btn btn-primary">
+                    Confirm Purchase
+                  </button>
+                  <button onClick={() => setShowPurchaseForm(false)} className="btn btn-secondary">
+                    Cancel
+                  </button>
+                </form>
+                {purchaseError && <p className="error-message">{purchaseError}</p>}
+                {purchaseMessage && <p className="success-message">{purchaseMessage}</p>}
+              </div>
+            </div>
           )}
         </div>
       )}
@@ -436,7 +567,7 @@ const CustomerDashboard = () => {
       {activeSection === 'transfer' && (
         <div className="section">
           <h2 className="section-title">Money Transfer</h2>
-          <form className="form" onSubmit={(e) => e.preventDefault()}>
+          <form className="form" onSubmit={handleTransfer}>
             <input
               type="text"
               className="form-input"
@@ -455,6 +586,8 @@ const CustomerDashboard = () => {
               Transfer
             </button>
           </form>
+          {message && <p className="success-message">{message}</p>}
+          {error && <p className="error-message">{error}</p>}
         </div>
       )}
     </div>
