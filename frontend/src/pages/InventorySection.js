@@ -1,17 +1,34 @@
-import React, { useState } from 'react';
+import React, { useState ,useEffect} from 'react';
 import axios from 'axios';
 
-const InventorySection = ({ 
-  profile, 
-  inventoryItems, 
-  navigate, 
-  setInventoryItems 
+const InventorySection = ({
+  profile,
+  inventoryItems,
+  navigate,
+  setInventoryItems
 }) => {
-  const [productName, setProductName] = useState('');   
+  const [productName, setProductName] = useState('');
   const [quantity, setQuantity] = useState('');
   const [price, setPrice] = useState('');
   const [inventoryMessage, setInventoryMessage] = useState('');
   const [inventoryError, setInventoryError] = useState('');
+  const [products, setProducts] = useState([]);
+
+
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/admin/products');
+        setProducts(response.data); // Populate dropdown with products
+      } catch (err) {
+        console.error('Failed to fetch products:', err.message);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+
 
   const handleAddToInventory = async (e) => {
     e.preventDefault();
@@ -60,13 +77,20 @@ const InventorySection = ({
 
       {/* Add Product Form */}
       <form className="form" onSubmit={handleAddToInventory}>
-        <input
-          type="text"
+        {/* Dropdown for Admin Products */}
+        <select
           className="form-input"
-          placeholder="Product Name"
           value={productName}
           onChange={(e) => setProductName(e.target.value)}
-        />
+          required
+        >
+          <option value="">Select a Product</option>
+          {products.map((product) => (
+            <option key={product.product_id} value={product.product_name}>
+              {product.product_name}
+            </option>
+          ))}
+        </select>
         <input
           type="number"
           className="form-input"
@@ -118,3 +142,4 @@ const InventorySection = ({
 };
 
 export default InventorySection;
+

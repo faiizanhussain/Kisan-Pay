@@ -26,6 +26,7 @@ const AdminDashboard = () => {
   const [editProductName, setEditProductName] = useState('');
   const [editDescription, setEditDescription] = useState('');
   const [editBasePrice, setEditBasePrice] = useState('');
+  const [selectedProduct, setSelectedProduct] = useState(''); // For dropdown selection
 
 
   const [activeSection, setActiveSection] = useState('addMoney');
@@ -36,6 +37,8 @@ const AdminDashboard = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
+
+        // Fetch all required data in parallel using Promise.all
         const [
           transactionRes,
           customerRes,
@@ -56,7 +59,7 @@ const AdminDashboard = () => {
         setTransactions(transactionRes.data);
         setCustomers(customerRes.data);
         setLoans(loanRes.data);
-        setProducts(productRes.data);
+        setProducts(productRes.data); // Admin products for dropdown
         setInventories(inventoryRes.data);
         setOrders(orderRes.data);
       } catch (err) {
@@ -64,6 +67,15 @@ const AdminDashboard = () => {
         setError('Failed to load data.');
       } finally {
         setLoading(false);
+      }
+    };
+
+    const fetchProducts = async () => {
+      try {
+        const response = await axios.get('http://localhost:5000/api/products');
+        setProducts(response.data); // Products for the seller dropdown
+      } catch (err) {
+        console.error('Error fetching products for dropdown:', err.message);
       }
     };
 
@@ -191,7 +203,7 @@ const AdminDashboard = () => {
 
   if (loading) return <p>Loading...</p>;
   if (error) return <p>{error}</p>;
-    return (
+  return (
     <div className="admin-dashboard-container">
       <h1 className="dashboard-title">Admin Dashboard</h1>
 
@@ -236,34 +248,55 @@ const AdminDashboard = () => {
       {activeSection === 'manageProducts' && (
         <section className="section">
           <h2 className="section-title">Manage Products</h2>
+
+          {/* Form to Add a New Product */}
           <form className="form" onSubmit={handleAddProduct}>
-            <input
-              className="form-input"
-              type="text"
-              placeholder="Product Name"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              required
-            />
-            <textarea
-              className="form-input"
-              placeholder="Description"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-            ></textarea>
-            <input
-              className="form-input"
-              type="number"
-              placeholder="Base Price (PKR)"
-              value={basePrice}
-              onChange={(e) => setBasePrice(e.target.value)}
-              required
-            />
+            <div className="mb-4">
+              <label htmlFor="productName" className="block text-gray-700 font-medium mb-2">
+                Product Name
+              </label>
+              <input
+                id="productName"
+                className="form-input"
+                type="text"
+                placeholder="Enter Product Name"
+                value={productName}
+                onChange={(e) => setProductName(e.target.value)}
+                required
+              />
+            </div>
+            <div className="mb-4">
+              <label htmlFor="description" className="block text-gray-700 font-medium mb-2">
+                Description
+              </label>
+              <textarea
+                id="description"
+                className="form-input"
+                placeholder="Enter Description"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+              ></textarea>
+            </div>
+            <div className="mb-4">
+              <label htmlFor="basePrice" className="block text-gray-700 font-medium mb-2">
+                Base Price (PKR)
+              </label>
+              <input
+                id="basePrice"
+                className="form-input"
+                type="number"
+                placeholder="Enter Base Price"
+                value={basePrice}
+                onChange={(e) => setBasePrice(e.target.value)}
+                required
+              />
+            </div>
             <button type="submit" className="btn btn-primary">
               Add Product
             </button>
           </form>
 
+          {/* Product List */}
           <h3 className="sub-title">Product List</h3>
           {products.length > 0 ? (
             <table className="data-table">
@@ -306,6 +339,7 @@ const AdminDashboard = () => {
           )}
         </section>
       )}
+
 
       {activeSection === 'transactions' && (
         <section className="section">
