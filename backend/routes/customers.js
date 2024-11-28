@@ -15,8 +15,9 @@ router.get('/', async (req, res) => {
   }
 });
 
-// Customer signup
-router.post('/signup', async (req, res) => {
+// Customer signup (IMPLEMENTED AS TRANSACTION)
+router.post('/signup', async (req, res) => 
+{
   const { f_name, l_name, email, phone, pass, cnic, u_name, role } = req.body;
 
   if (!['Buyer', 'Seller'].includes(role)) {
@@ -109,7 +110,7 @@ router.post('/login', async (req, res) => {
 
   try {
     if (role === 'admin') {
-      // Handle admin login (assuming you have an Employees table)
+      // Handle admin login
       const adminResult = await pool.query('SELECT employee_id, role, pass FROM Employees WHERE email = $1', [email]);
 
       if (adminResult.rows.length === 0) {
@@ -128,7 +129,9 @@ router.post('/login', async (req, res) => {
         role: admin.role,
         employee_id: admin.employee_id,
       });
-    } else if (role === 'Buyer' || role === 'Seller') {
+    } 
+    
+    else if (role === 'Buyer' || role === 'Seller') {
       // Handle customer login
       const userResult = await pool.query(
         `SELECT c.cust_id, c.role, c.pass, a.acc_no 
@@ -209,7 +212,7 @@ router.get('/transactions', async (req, res) => {
   }
 });
 
-// Transfer endpoint
+// Transfer Logic (IMPLEMENTED AS TRANSACTION))
 router.post('/transfer', async (req, res) => {
   console.log('Incoming request body:', req.body);
 
@@ -234,17 +237,16 @@ router.post('/transfer', async (req, res) => {
   const client = await pool.connect();
 
   try {
-    // Start a transaction
+  
     await client.query('BEGIN');
 
-    // Call the stored procedure
+    //called the transfer_funds function from the database
     const result = await client.query('SELECT transfer_funds($1, $2, $3)', [
       parseInt(cust_id),
       parseInt(receiver_account),
       parseFloat(amount),
     ]);
 
-    // Commit the transaction
     await client.query('COMMIT');
     console.log('Transfer successful');
     res.status(200).json({ message: 'Transfer successful' });
@@ -253,7 +255,7 @@ router.post('/transfer', async (req, res) => {
     await client.query('ROLLBACK');
     console.error('Error during transfer:', err.message);
 
-    // Custom error handling
+    // error handling
     let statusCode = 500;
     let errorMessage = 'Transfer failed';
 
@@ -329,7 +331,7 @@ router.post('/inventory/add', async (req, res) => {
   }
 });
 
-// Route to get seller's inventory
+// get specific seller's inventory
 router.get('/inventory', async (req, res) => {
   const { cust_id } = req.query;
 
@@ -364,7 +366,7 @@ router.get('/inventory', async (req, res) => {
   }
 });
 
-// Route to get all available inventory items for buyers
+// get all available inventory items for buyers
 router.get('/inventory/all', async (req, res) => {
   try {
     const inventoryResult = await pool.query(
@@ -382,7 +384,7 @@ router.get('/inventory/all', async (req, res) => {
   }
 });
 
-// Route to handle purchase
+// Route to handle purchase of products (for buyers) [IMPLEMENTED AS TRANSACTION]
 router.post('/purchase', async (req, res) => {
   const { buyer_id, inventory_id, quantity } = req.body;
 

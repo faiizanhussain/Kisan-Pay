@@ -87,7 +87,7 @@ router.put('/:id', async (req, res) => {
     }
 });
 
-// Get a specific loan by ID including the repayment schedule
+// Get a specific loan by ID 
 router.get('/:id', async (req, res) => {
     const { id } = req.params;
     try {
@@ -98,7 +98,7 @@ router.get('/:id', async (req, res) => {
         if (loan.rows.length === 0) {
             return res.status(404).json({ message: 'Loan not found' });
         }
-        // Assume a simple repayment calculation here or join with a repayments table
+       
         const repayments = await pool.query(
             'SELECT * FROM Repayments WHERE loan_id = $1 ORDER BY due_date',
             [id]
@@ -125,8 +125,9 @@ router.delete('/:id', async (req, res) => {
         res.status(500).json({ error: err.message });
     }
 });
-// Update loan with repayment in loans.js
 
+
+// Update loan with repayment
 router.post('/:loan_id/repay', async (req, res) => {
     const { loan_id } = req.params;
     const { amount } = req.body;
