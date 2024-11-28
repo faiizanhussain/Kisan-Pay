@@ -54,7 +54,7 @@ const AdminDashboard = () => {
           axios.get('http://localhost:5000/api/admin/products'),
           axios.get('http://localhost:5000/api/admin/inventories'),
           axios.get('http://localhost:5000/api/admin/orders'),
-          axios.get('http://localhost:5000/api/admin/bank-stats'), // New
+          axios.get('http://localhost:5000/api/admin/bank-stats'),
         ]);
   
         setTransactions(transactionRes.data);

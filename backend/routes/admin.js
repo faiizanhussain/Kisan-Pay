@@ -1,13 +1,15 @@
-// Import statements using ES modules
 import express from 'express';
-import pool from '../config/db.js'; // Include the .js extension for ES modules
+import pool from '../config/db.js'; 
 
 const router = express.Router();
 
+
+
 // Admin-only route to add money to a user's account
-router.post('/add-money', async (req, res) => {
+router.post('/add-money', async (req, res) => 
+{
   const { cust_id, amount } = req.body;
-  console.log('Incoming add money request:', { cust_id, amount }); // Debug log
+  console.log('Incoming add money request:', { cust_id, amount }); // Debug 
 
   if (!cust_id || isNaN(cust_id)) {
     console.error('Invalid customer ID:', cust_id);
@@ -46,7 +48,9 @@ router.post('/add-money', async (req, res) => {
 });
 
 // Admin-only route to fetch all transactions
-router.get('/transactions', async (req, res) => {
+router.get('/transactions', async (req, res) => 
+  {
+
   try {
     const transactions = await pool.query(
       'SELECT * FROM Transactions ORDER BY date_time DESC'
@@ -59,7 +63,8 @@ router.get('/transactions', async (req, res) => {
 });
 
 // Admin-only route to fetch all customers
-router.get('/customers', async (req, res) => {
+router.get('/customers', async (req, res) => 
+  {
   try {
     const customers = await pool.query('SELECT * FROM Customers');
     res.json(customers.rows);
@@ -69,8 +74,9 @@ router.get('/customers', async (req, res) => {
   }
 });
 
-// New route to add a product
-router.post('/add-product', async (req, res) => {
+// Admin-only Route to add a product
+router.post('/add-product', async (req, res) => 
+{
   const { product_name, description, base_price } = req.body;
 
   if (!product_name || product_name.trim() === '') {
@@ -97,7 +103,7 @@ router.post('/add-product', async (req, res) => {
   }
 });
 
-// New route to fetch all products
+// Route to fetch all products
 router.get('/products', async (req, res) => {
   try {
     const products = await pool.query(
@@ -110,6 +116,7 @@ router.get('/products', async (req, res) => {
   }
 });
 
+// Admin route to fetch all inventories (use of joins and order by)
 router.get('/inventories', async (req, res) => {
   try {
     const inventories = await pool.query(`
@@ -133,7 +140,7 @@ router.get('/inventories', async (req, res) => {
   }
 });
 
-// **New Route**: Admin-only route to fetch all orders
+// Admin-only route to fetch all orders (use of joins and order by)
 router.get('/orders', async (req, res) => {
   try {
     const orders = await pool.query(`
@@ -167,13 +174,13 @@ router.get('/orders', async (req, res) => {
   }
 });
 
+// Admin-only route to fetch bank stats (use of aggregate functions)
 router.get('/bank-stats', async (req, res) => {
   try {
-    // Query for total customers
+
     const totalCustomersQuery = 'SELECT COUNT(*) AS total_customers FROM customers';
     const totalCustomersResult = await pool.query(totalCustomersQuery);
 
-    // Query for buyer and seller counts
     const roleCountsQuery = `
       SELECT role, COUNT(*) AS count 
       FROM customers 
@@ -181,19 +188,16 @@ router.get('/bank-stats', async (req, res) => {
     `;
     const roleCountsResult = await pool.query(roleCountsQuery);
 
-    // Query for total balance
     const totalBalanceQuery = 'SELECT SUM(balance) AS total_balance FROM accounts';
     const totalBalanceResult = await pool.query(totalBalanceQuery);
 
-    // Query for total products
     const totalProductsQuery = 'SELECT COUNT(*) AS total_products FROM products';
     const totalProductsResult = await pool.query(totalProductsQuery);
 
-    // Query for total inventories
     const totalInventoriesQuery = 'SELECT COUNT(*) AS total_inventories FROM inventory';
     const totalInventoriesResult = await pool.query(totalInventoriesQuery);
 
-    // Combine results
+    //total stats
     const stats = {
       total_customers: totalCustomersResult.rows[0]?.total_customers || 0,
       role_counts: roleCountsResult.rows || [],
@@ -249,7 +253,6 @@ router.put('/products/:product_id', async (req, res) => {
     return res.status(400).json({ message: 'Invalid product ID' });
   }
 
-  // Input validation
   if (!product_name || product_name.trim() === '') {
     return res.status(400).json({ message: 'Product name is required' });
   }
@@ -258,17 +261,18 @@ router.put('/products/:product_id', async (req, res) => {
   }
 
   try {
-    // Check if the product exists
+
     const productResult = await pool.query(
       'SELECT * FROM Products WHERE product_id = $1',
       [product_id]
     );
 
+    //check if exists
     if (productResult.rows.length === 0) {
       return res.status(404).json({ message: 'Product not found' });
     }
 
-    // Update the product
+    // Update
     const updatedProductResult = await pool.query(
       'UPDATE Products SET product_name = $1, description = $2, base_price = $3 WHERE product_id = $4 RETURNING *',
       [product_name, description || null, parseFloat(base_price), product_id]
@@ -283,7 +287,5 @@ router.put('/products/:product_id', async (req, res) => {
     res.status(500).json({ message: 'Failed to update product' });
   }
 });
-
-
 
 export default router;
