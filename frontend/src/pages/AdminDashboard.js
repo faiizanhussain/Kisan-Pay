@@ -29,6 +29,7 @@ const AdminDashboard = () => {
   const [selectedProduct, setSelectedProduct] = useState(''); // For dropdown selection
 
 
+  const [bankStats, setBankStats] = useState(null);
   const [activeSection, setActiveSection] = useState('addMoney');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -37,8 +38,7 @@ const AdminDashboard = () => {
     const fetchData = async () => {
       try {
         setLoading(true);
-
-        // Fetch all required data in parallel using Promise.all
+  
         const [
           transactionRes,
           customerRes,
@@ -46,6 +46,7 @@ const AdminDashboard = () => {
           productRes,
           inventoryRes,
           orderRes,
+          bankStatsRes, // New
         ] = await Promise.all([
           axios.get('http://localhost:5000/api/admin/transactions'),
           axios.get('http://localhost:5000/api/admin/customers'),
@@ -53,15 +54,16 @@ const AdminDashboard = () => {
           axios.get('http://localhost:5000/api/admin/products'),
           axios.get('http://localhost:5000/api/admin/inventories'),
           axios.get('http://localhost:5000/api/admin/orders'),
+          axios.get('http://localhost:5000/api/admin/bank-stats'), // New
         ]);
-
-        // Set the state variables with the fetched data
+  
         setTransactions(transactionRes.data);
         setCustomers(customerRes.data);
         setLoans(loanRes.data);
-        setProducts(productRes.data); // Admin products for dropdown
+        setProducts(productRes.data);
         setInventories(inventoryRes.data);
         setOrders(orderRes.data);
+        setBankStats(bankStatsRes.data); // Set bank stats
       } catch (err) {
         console.error('Error fetching data:', err.message);
         setError('Failed to load data.');
@@ -69,18 +71,10 @@ const AdminDashboard = () => {
         setLoading(false);
       }
     };
-
-    const fetchProducts = async () => {
-      try {
-        const response = await axios.get('http://localhost:5000/api/products');
-        setProducts(response.data); // Products for the seller dropdown
-      } catch (err) {
-        console.error('Error fetching products for dropdown:', err.message);
-      }
-    };
-
+  
     fetchData();
   }, []);
+  
 
   const handleAddMoney = async (e) => {
     e.preventDefault();
@@ -215,6 +209,7 @@ const AdminDashboard = () => {
         <button className="tab-btn" onClick={() => setActiveSection('inventories')}>Inventories</button>
         <button className="tab-btn" onClick={() => setActiveSection('orders')}>Orders</button>
         <button className="tab-btn" onClick={() => setActiveSection('loanRequests')}>Loan Requests</button>
+        <button className="tab-btn" onClick={() => setActiveSection('bankStats')}>Bank Stats</button>
       </div>
 
       {/* Conditional Rendering Based on Active Section */}
@@ -244,6 +239,49 @@ const AdminDashboard = () => {
           </form>
         </section>
       )}
+
+{activeSection === 'bankStats' && (
+  <section className="section">
+    <h2 className="section-title">Bank Stats</h2>
+    {bankStats ? (
+      <table className="data-table">
+        <thead>
+          <tr>
+            <th>Statistic</th>
+            <th>Value</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>Total Customers</td>
+            <td>{bankStats.total_customers}</td>
+          </tr>
+          {bankStats.role_counts.map((role) => (
+            <tr key={role.role}>
+              <td>Total {role.role === 'Buyer' ? 'Buyers' : 'Sellers'}</td>
+              <td>{role.count}</td>
+            </tr>
+          ))}
+          <tr>
+            <td>Total Balance</td>
+            <td>{bankStats.total_balance} PKR</td>
+          </tr>
+          <tr>
+            <td>Total Products</td>
+            <td>{bankStats.total_products}</td>
+          </tr>
+          <tr>
+            <td>Total Inventories</td>
+            <td>{bankStats.total_inventories}</td>
+          </tr>
+        </tbody>
+      </table>
+    ) : (
+      <p className="no-data">Bank stats are not available.</p>
+    )}
+  </section>
+)}
+
 
       {activeSection === 'manageProducts' && (
         <section className="section">

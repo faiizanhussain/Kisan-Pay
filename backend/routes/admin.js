@@ -167,6 +167,49 @@ router.get('/orders', async (req, res) => {
   }
 });
 
+router.get('/bank-stats', async (req, res) => {
+  try {
+    // Query for total customers
+    const totalCustomersQuery = 'SELECT COUNT(*) AS total_customers FROM customers';
+    const totalCustomersResult = await pool.query(totalCustomersQuery);
+
+    // Query for buyer and seller counts
+    const roleCountsQuery = `
+      SELECT role, COUNT(*) AS count 
+      FROM customers 
+      GROUP BY role;
+    `;
+    const roleCountsResult = await pool.query(roleCountsQuery);
+
+    // Query for total balance
+    const totalBalanceQuery = 'SELECT SUM(balance) AS total_balance FROM accounts';
+    const totalBalanceResult = await pool.query(totalBalanceQuery);
+
+    // Query for total products
+    const totalProductsQuery = 'SELECT COUNT(*) AS total_products FROM products';
+    const totalProductsResult = await pool.query(totalProductsQuery);
+
+    // Query for total inventories
+    const totalInventoriesQuery = 'SELECT COUNT(*) AS total_inventories FROM inventory';
+    const totalInventoriesResult = await pool.query(totalInventoriesQuery);
+
+    // Combine results
+    const stats = {
+      total_customers: totalCustomersResult.rows[0]?.total_customers || 0,
+      role_counts: roleCountsResult.rows || [],
+      total_balance: totalBalanceResult.rows[0]?.total_balance || 0,
+      total_products: totalProductsResult.rows[0]?.total_products || 0,
+      total_inventories: totalInventoriesResult.rows[0]?.total_inventories || 0,
+    };
+
+    res.json(stats);
+  } catch (err) {
+    console.error('Error fetching bank stats:', err.message);
+    res.status(500).send('Failed to fetch bank stats');
+  }
+});
+
+
 // Admin-only route to delete a product
 router.delete('/products/:product_id', async (req, res) => {
   const { product_id } = req.params;
@@ -240,7 +283,6 @@ router.put('/products/:product_id', async (req, res) => {
     res.status(500).json({ message: 'Failed to update product' });
   }
 });
-
 
 
 

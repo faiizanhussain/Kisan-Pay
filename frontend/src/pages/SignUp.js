@@ -30,21 +30,60 @@ const SignUp = () => {
     setError('');
     setMessage('');
     setLoading(true);
-
+  
     const { f_name, l_name, email, phone, pass, cnic, u_name } = formData;
-
-    if (!f_name || !l_name || !email || !phone || !pass || !cnic || !u_name) {
-      setError('All fields are required.');
+  
+    // Validation rules
+    const nameRegex = /^[a-zA-Z\s]{2,50}$/; // Only letters and spaces, 2-50 characters
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/; // Standard email validation
+    const phoneRegex = /^[0-9]{10,15}$/; // Allow numeric values, 10-15 digits
+    const cnicRegex = /^[0-9]{13,15}$/; // Allow numeric values, 13-15 digits for CNIC
+    const usernameRegex = /^[a-zA-Z0-9_]{3,30}$/; // Alphanumeric and underscores, 3-30 characters
+  
+    // Validate individual fields
+    if (!nameRegex.test(f_name)) {
+      setError('First Name must be 2-50 characters long and contain only letters and spaces.');
       setLoading(false);
       return;
     }
-
+    if (!nameRegex.test(l_name)) {
+      setError('Last Name must be 2-50 characters long and contain only letters and spaces.');
+      setLoading(false);
+      return;
+    }
+    if (!emailRegex.test(email)) {
+      setError('Please enter a valid email address.');
+      setLoading(false);
+      return;
+    }
+    if (!phoneRegex.test(phone)) {
+      setError('Phone number must be 10-15 digits long and contain only numbers.');
+      setLoading(false);
+      return;
+    }
+    if (!cnicRegex.test(cnic)) {
+      setError('CNIC must be 13-15 digits long and contain only numbers.');
+      setLoading(false);
+      return;
+    }
+    if (!usernameRegex.test(u_name)) {
+      setError('Username must be 3-30 characters long and can only contain letters, numbers, and underscores.');
+      setLoading(false);
+      return;
+    }
+    if (!pass) {
+      setError('Password cannot be empty.');
+      setLoading(false);
+      return;
+    }
+  
+    // Proceed with API call if all validations pass
     try {
       await axios.post('http://localhost:5000/api/customers/signup', {
         ...formData,
         role,
       });
-
+  
       setMessage('Account created successfully! Redirecting to login...');
       setTimeout(() => navigate('/login'), 2000);
     } catch (err) {
@@ -53,7 +92,7 @@ const SignUp = () => {
       setLoading(false);
     }
   };
-
+  
   return (
     <div className="min-h-screen mt-16 flex items-center justify-center bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500">
       <div className="bg-white shadow-2xl rounded-xl p-10 w-full max-w-3xl transform hover:scale-105 transition-transform duration-500 ease-in-out">
