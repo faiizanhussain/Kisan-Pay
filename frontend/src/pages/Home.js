@@ -10,7 +10,8 @@ const Home = () => {
           {/* Text Section */}
           <div className="text-center md:text-left space-y-8 flex-1">
             <h1 className="text-5xl md:text-6xl font-extrabold text-gray-800 tracking-wide leading-tight">
-              Welcome to <span className="text-blue-500">KisanPay</span>
+              Welcome t
+              o <span className="text-blue-500">KisanPay</span>
             </h1>
             <p className="text-lg md:text-xl text-gray-600">
               Simplify your financial management with features tailored for farmers and businesses. 

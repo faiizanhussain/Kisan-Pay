@@ -175,7 +175,7 @@ router.get('/profile', async (req, res) => {
       return res.status(400).json({ message: 'Customer ID is required' });
     }
     const customer = await pool.query(
-      'SELECT f_name, l_name, email, phone, cnic, u_name, role FROM Customers WHERE cust_id = $1',
+      'SELECT f_name, l_name, email, phone, cnic, u_name, role, acc_no FROM Customers cc join accounts ac on cc.cust_id = ac.cust_id WHERE cc.cust_id = $1',
       [cust_id]
     );
     if (customer.rows.length === 0) {
@@ -408,6 +408,7 @@ router.post('/purchase', async (req, res) => {
     const buyerAccountResult = await client.query('SELECT acc_no, balance FROM Accounts WHERE cust_id = $1', [buyer_id]);
     if (buyerAccountResult.rows.length === 0) {
       throw new Error('Buyer account not found');
+      
     }
     const buyer_acc_no = buyerAccountResult.rows[0].acc_no;
     const buyerBalance = parseFloat(buyerAccountResult.rows[0].balance);

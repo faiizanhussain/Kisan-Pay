@@ -13,6 +13,8 @@ const ProfileSection = ({ profile }) => {
           <li><strong>CNIC:</strong> {profile.cnic}</li>
           <li><strong>Username:</strong> {profile.u_name}</li>
           <li><strong>Role:</strong> {profile.role}</li>
+          <li><strong>AccountNo:</strong> {profile.acc_no}</li>
+        
         </ul>
       ) : (
         <p>No profile data available.</p>

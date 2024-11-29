@@ -61,7 +61,7 @@ router.post('/login', async (req, res) => {
 
             const customer = customerResult.rows[0];
 
-            // Check password (plain-text comparison as per current implementation)
+            // Check password 
             if (customer.pass !== password) {
                 return res.status(401).json({ message: 'Incorrect password.' });
             }

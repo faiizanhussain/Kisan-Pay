@@ -1,5 +1,3 @@
-// authMiddleware.js
-
 // Since no token authentication is needed, we can simply move forward without checking token
 export const authenticate = (req, res, next) => {
     console.log('No token authentication, proceeding with request.');
