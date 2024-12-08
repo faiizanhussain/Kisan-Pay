@@ -1,5 +1,7 @@
 # KisanPay Project
-# Kisan-Pay
+
+## VIDEO DEMONSTRATION:
+  ### [KISANPAY DEMONSTRATION VIDEO (Youtube)](https://youtu.be/Z63YGy731_o)
 
 ## Project Structure
 
@@ -16,21 +18,23 @@
   - `src/`
     - `components/`: Reusable React components.
     - `pages/`: React components that represent whole pages.
-    - `contexts/`: React contexts for state management across components.
     - `App.js`: Main React component that handles routing.
   - `public/`: Public assets like HTML templates and images.
 
 ## Setup Instructions
 
 ### Backend Setup
-   npm install
-   npx nodemon app.js (for starting backend server)
+   `npm install`
+
+   `node app.js` (for starting backend server)
 
 ### Frontend setup
 
-cd ../frontend
-npm install
-npm start (for starting frontend server)
+`cd ../frontend`
+
+`npm install`
+
+`npm start` (for starting frontend server)
 
 # NOTE:
 
@@ -41,7 +45,3 @@ npm start (for starting frontend server)
 
 ## edit your own correct database url in `backend/config/.env`
   because i have edited on my own according to databse
-
-## Loan impelementation done:
-frontend/src/components/loanManagement.js handles for all logics and there is route in backend loan.js , there are differnt dashboards for customer and admin for loans
-
