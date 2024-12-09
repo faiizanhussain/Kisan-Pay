@@ -318,16 +318,28 @@ router.post('/inventory/add', async (req, res) => {
     }
     const product_id = productResult.rows[0].product_id;
 
-    // Insert into Inventory
-    const insertResult = await pool.query(
-      'INSERT INTO Inventory (supplier_id, product_id, quantity, price) VALUES ($1, $2, $3, $4) RETURNING *',
-      [cust_id, product_id, quantity, price]
-    );
+    const count = await pool.query('SELECT count(*) FROM Inventory WHERE supplier_id = $1 AND product_id = $2', [cust_id, product_id]);
 
-    res.status(201).json({ message: 'Product added to inventory', inventory: insertResult.rows[0] });
+    //if product already exists in inventory, update the quantity and price
+    if (count.rows[0].count > 0) {
+      const insertResult = await pool.query(
+        'UPDATE Inventory SET quantity = $1, price = $2 WHERE supplier_id = $3 AND product_id = $4', [quantity,price, cust_id, product_id]);
+      res.status(201).json({ message: 'Product updated to inventory', inventory: insertResult.rows[0] });
+    }
+    else
+    // else if product does not exists in inventory Insert into Inventory
+    {
+      const insertResult = await pool.query(
+        'INSERT INTO Inventory (supplier_id, product_id, quantity, price) VALUES ($1, $2, $3, $4) RETURNING *',
+        [cust_id, product_id, quantity, price]    
+      );
+      res.status(201).json({ message: 'Product added to inventory', inventory: insertResult.rows[0] });
+    }
+
+    // res.status(201).json({ message: 'Product added/updated to inventory', inventory: insertResult.rows[0] });
   } catch (err) {
     console.error('Error adding product to inventory:', err.message);
-    res.status(500).json({ message: 'Failed to add product to inventory' });
+    res.status(500).json({ message: 'Failed to add/update product to inventory' });
   }
 });
 
