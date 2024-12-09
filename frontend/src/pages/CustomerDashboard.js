@@ -1,9 +1,11 @@
+// src/components/CustomerDashboard.js
+
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import '../styles/CustomerDashboard.css';
 
-// Import all section components
+// Import all existing section components
 import ProfileSection from './ProfileSection';
 import BalanceSection from './BalanceSection';
 import TransactionsSection from './TransactionsSection';
@@ -21,7 +23,8 @@ const CustomerDashboard = () => {
   const [profile, setProfile] = useState(null);
   const [inventoryItems, setInventoryItems] = useState([]);
   const [activeSection, setActiveSection] = useState('profile');
-  const [orders, setOrders] = useState([]);
+  const [orders, setOrders] = useState([]); // For Buyer Orders
+  const [sellerOrders, setSellerOrders] = useState([]); // For Seller Orders
 
   // Marketplace and Purchase-related states
   const [showPurchaseForm, setShowPurchaseForm] = useState(false);
@@ -65,13 +68,19 @@ const CustomerDashboard = () => {
         });
         setProfile(profileResponse.data);
 
-        // Fetch inventory items based on role
+        // Fetch inventory items and orders based on role
         if (profileResponse.data.role === 'Seller') {
           // Fetch seller's own inventory
           const inventoryResponse = await axios.get('http://localhost:5000/api/customers/inventory', {
             params: { cust_id },
           });
           setInventoryItems(inventoryResponse.data);
+
+          // Fetch seller's sold orders
+          const sellerOrdersResponse = await axios.get('http://localhost:5000/api/customers/seller/orders', {
+            params: { cust_id },
+          });
+          setSellerOrders(sellerOrdersResponse.data);
         } else if (profileResponse.data.role === 'Buyer') {
           // Fetch all available inventory items for buyers
           const inventoryResponse = await axios.get('http://localhost:5000/api/customers/inventory/all');
@@ -108,6 +117,15 @@ const CustomerDashboard = () => {
         params: { cust_id },
       });
       setTransactions(transactionsResponse.data);
+
+      // If seller, refresh seller's orders
+      const role = localStorage.getItem('role');
+      if (role === 'Seller') {
+        const sellerOrdersResponse = await axios.get('http://localhost:5000/api/customers/seller/orders', {
+          params: { cust_id },
+        });
+        setSellerOrders(sellerOrdersResponse.data);
+      }
     } catch (err) {
       console.error('Error refreshing data:', err.message);
     }
@@ -116,7 +134,6 @@ const CustomerDashboard = () => {
   const handlePurchaseClick = (item) => {
     setSelectedProduct(item);
     setShowPurchaseForm(true);
-    // Previous code continues...
     setPurchaseQuantity('');
     setPurchaseError('');
     setPurchaseMessage('');
@@ -127,7 +144,7 @@ const CustomerDashboard = () => {
     setPurchaseError('');
     setPurchaseMessage('');
 
-    const quantity = parseInt(purchaseQuantity);
+    const quantity = parseInt(purchaseQuantity, 10);
 
     if (isNaN(quantity) || quantity <= 0 || quantity > selectedProduct.quantity) {
       setPurchaseError('Invalid quantity');
@@ -175,41 +192,49 @@ const CustomerDashboard = () => {
       {/* Navigation Menu */}
       <div className="navigation-menu">
         <button
-          className={`nav-button ${activeSection === 'profile' && 'active'}`}
+          className={`nav-button ${activeSection === 'profile' ? 'active' : ''}`}
           onClick={() => setActiveSection('profile')}
         >
           Profile
         </button>
         <button
-          className={`nav-button ${activeSection === 'balance' && 'active'}`}
+          className={`nav-button ${activeSection === 'balance' ? 'active' : ''}`}
           onClick={() => setActiveSection('balance')}
         >
           Balance
         </button>
         <button
-          className={`nav-button ${activeSection === 'transactions' && 'active'}`}
+          className={`nav-button ${activeSection === 'transactions' ? 'active' : ''}`}
           onClick={() => setActiveSection('transactions')}
         >
           Transactions
         </button>
         {profile?.role === 'Seller' && (
-          <button
-            className={`nav-button ${activeSection === 'inventory' && 'active'}`}
-            onClick={() => setActiveSection('inventory')}
-          >
-            Inventory
-          </button>
+          <>
+            <button
+              className={`nav-button ${activeSection === 'inventory' ? 'active' : ''}`}
+              onClick={() => setActiveSection('inventory')}
+            >
+              Inventory
+            </button>
+            <button
+              className={`nav-button ${activeSection === 'sellerOrders' ? 'active' : ''}`}
+              onClick={() => setActiveSection('sellerOrders')}
+            >
+              Orders
+            </button>
+          </>
         )}
         {profile?.role === 'Buyer' && (
           <>
             <button
-              className={`nav-button ${activeSection === 'marketplace' && 'active'}`}
+              className={`nav-button ${activeSection === 'marketplace' ? 'active' : ''}`}
               onClick={() => setActiveSection('marketplace')}
             >
               Marketplace
             </button>
             <button
-              className={`nav-button ${activeSection === 'orders' && 'active'}`}
+              className={`nav-button ${activeSection === 'orders' ? 'active' : ''}`}
               onClick={() => setActiveSection('orders')}
             >
               Orders
@@ -217,7 +242,7 @@ const CustomerDashboard = () => {
           </>
         )}
         <button
-          className={`nav-button ${activeSection === 'transfer' && 'active'}`}
+          className={`nav-button ${activeSection === 'transfer' ? 'active' : ''}`}
           onClick={() => setActiveSection('transfer')}
         >
           Money Transfer
@@ -226,7 +251,7 @@ const CustomerDashboard = () => {
 
       {/* Conditional Rendering of Sections */}
       {activeSection === 'profile' && <ProfileSection profile={profile} />}
-      
+
       {activeSection === 'balance' && (
         <BalanceSection 
           accountExists={accountExists}
@@ -236,11 +261,11 @@ const CustomerDashboard = () => {
           setBalance={setBalance}
         />
       )}
-      
+
       {activeSection === 'transactions' && (
         <TransactionsSection transactions={transactions} />
       )}
-      
+
       {activeSection === 'inventory' && profile?.role === 'Seller' && (
         <InventorySection 
           profile={profile}
@@ -249,7 +274,7 @@ const CustomerDashboard = () => {
           setInventoryItems={setInventoryItems}
         />
       )}
-      
+
       {activeSection === 'transfer' && (
         <MoneyTransferSection 
           navigate={navigate} 
@@ -304,6 +329,9 @@ const CustomerDashboard = () => {
                     placeholder="Quantity"
                     value={purchaseQuantity}
                     onChange={(e) => setPurchaseQuantity(e.target.value)}
+                    min="1"
+                    max={selectedProduct.quantity}
+                    required
                   />
                   <button type="submit" className="btn btn-primary">
                     Confirm Purchase
@@ -360,8 +388,51 @@ const CustomerDashboard = () => {
           )}
         </div>
       )}
+
+      {/* Seller Orders Section */}
+      {activeSection === 'sellerOrders' && profile?.role === 'Seller' && (
+        <div className="section">
+          <h2 className="section-title">Your Sold Orders</h2>
+          {sellerOrders.length > 0 ? (
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Order Detail ID</th>
+                  <th>Order ID</th>
+                  <th>Order Date</th>
+                  <th>Product Name</th>
+                  <th>Quantity</th>
+                  <th>Price (PKR)</th>
+                  <th>Total Price (PKR)</th>
+                  <th>Buyer Name</th>
+                  <th>Buyer Account No.</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sellerOrders.map((order) => (
+                  <tr key={order.order_detail_id}>
+                    <td>{order.order_detail_id}</td>
+                    <td>{order.order_id}</td>
+                    <td>{new Date(order.order_date).toLocaleDateString()}</td>
+                    <td>{order.product_name}</td>
+                    <td>{order.quantity}</td>
+                    <td>{order.price}</td>
+                    <td>{order.total_price}</td>
+                    <td>
+                      {order.buyer_first_name} {order.buyer_last_name}
+                    </td>
+                    <td>{order.buyer_account_number}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p>No orders sold yet.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 };
 
-export default CustomerDashboard; 
+export default CustomerDashboard;

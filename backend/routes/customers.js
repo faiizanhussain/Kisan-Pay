@@ -521,4 +521,47 @@ router.get('/orders', async (req, res) => {
   }
 });
 
+// ... existing imports and router setup
+
+// Fetch Seller's Sold Orders
+router.get('/seller/orders', async (req, res) => {
+  const { cust_id } = req.query;
+
+  if (!cust_id || isNaN(cust_id)) {
+    return res.status(400).json({ message: 'Invalid or missing Customer ID' });
+  }
+
+  try {
+    const sellerOrders = await pool.query(
+      `SELECT 
+         od.order_detail_id,
+         o.order_id,
+         o.order_date,
+         od.quantity,
+         od.price,
+         od.total_price,
+         p.product_name,
+         c.f_name AS buyer_first_name,
+         c.l_name AS buyer_last_name,
+         a.acc_no AS buyer_account_number
+       FROM OrderDetails od
+       JOIN Orders o ON od.order_id = o.order_id
+       JOIN Inventory i ON od.inventory_id = i.inventory_id
+       JOIN Products p ON i.product_id = p.product_id
+       JOIN Customers c ON o.buyer_id = c.cust_id
+       JOIN Accounts a ON c.cust_id = a.cust_id
+       WHERE od.supplier_id = $1
+       ORDER BY o.order_date DESC`,
+      [parseInt(cust_id)]
+    );
+
+    res.json(sellerOrders.rows);
+  } catch (err) {
+    console.error('Error fetching seller orders:', err.message);
+    res.status(500).json({ message: 'Failed to fetch seller orders' });
+  }
+});
+
+// ... existing routes
+
 export default router;
