@@ -1,17 +1,52 @@
-// backend/routes/auth.js
-
 import express from 'express';
+import bcrypt from 'bcrypt';
+import jwt from 'jsonwebtoken';
+import rateLimit from 'express-rate-limit';
 import pool from '../config/db.js';
 
 const router = express.Router();
 
-// Unified Login Route
-router.post('/login', async (req, res) => {
-    const { role, email, password } = req.body;
+// Email validation function
+const isValidEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email);
+};
 
+// Sanitize input
+const sanitizeInput = (str) => {
+    return str.trim().replace(/[<>]/g, '');
+};
+
+// Rate limiter: 5 attempts per 15 minutes
+const loginLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 5,
+    message: { message: 'Too many login attempts. Please try again later.' }
+});
+
+// Apply rate limiter to login route
+router.use('/login', loginLimiter);
+
+router.post('/login', async (req, res) => {
+    let { role, email, password } = req.body;
+
+    // Input validation
     if (!role || !email || !password) {
         return res.status(400).json({ message: 'Role, email, and password are required.' });
     }
+
+    // Sanitize inputs
+    email = sanitizeInput(email);
+    password = sanitizeInput(password);
+    role = sanitizeInput(role);
+
+    // Validate email format
+    if (!isValidEmail(email)) {
+        return res.status(400).json({ message: 'Invalid email format.' });
+    }
+
+    // Generic error message for security
+    const invalidCredentials = 'Invalid credentials';
 
     try {
         if (role === 'admin') {
@@ -25,25 +60,26 @@ router.post('/login', async (req, res) => {
             );
 
             if (adminResult.rows.length === 0) {
-                return res.status(404).json({ message: 'Admin not found.' });
+                return res.status(401).json({ message: invalidCredentials });
             }
 
             const admin = adminResult.rows[0];
+            const validPassword = await bcrypt.compare(password, admin.password);
 
-            // Check password (plain-text comparison as per current implementation)
-            if (admin.password !== password) {
-                return res.status(401).json({ message: 'Incorrect password.' });
+            if (!validPassword || !admin.is_manager) {
+                return res.status(401).json({ message: invalidCredentials });
             }
 
-            // Check if the employee is a manager
-            if (!admin.is_manager) {
-                return res.status(403).json({ message: 'Access denied. Not a manager.' });
-            }
+            const token = jwt.sign(
+                { id: admin.employee_id, role: 'admin' },
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' }
+            );
 
             // Successful Admin Login
             return res.status(200).json({
                 role: 'admin',
-                employee_id: admin.employee_id,
+                token
             });
         } else if (role === 'customer') {
             // Validate Customer Credentials
@@ -56,28 +92,37 @@ router.post('/login', async (req, res) => {
             );
 
             if (customerResult.rows.length === 0) {
-                return res.status(404).json({ message: 'Customer not found.' });
+                return res.status(401).json({ message: invalidCredentials });
             }
 
             const customer = customerResult.rows[0];
+            const validPassword = await bcrypt.compare(password, customer.pass);
 
-            // Check password 
-            if (customer.pass !== password) {
-                return res.status(401).json({ message: 'Incorrect password.' });
+            if (!validPassword) {
+                return res.status(401).json({ message: invalidCredentials });
             }
+
+            const token = jwt.sign(
+                { id: customer.cust_id, role: 'customer' },
+                process.env.JWT_SECRET,
+                { expiresIn: '1h' }
+            );
 
             // Successful Customer Login
             return res.status(200).json({
                 role: 'customer',
-                cust_id: customer.cust_id,
-                acc_no: customer.acc_no,
+                token
             });
         } else {
-            return res.status(400).json({ message: 'Invalid role specified.' });
+            return res.status(400).json({ 
+                message: 'Invalid role. Must be either "admin" or "customer".' 
+            });
         }
     } catch (err) {
-        console.error('Login Error:', err.message);
-        return res.status(500).json({ message: 'Server error during login.' });
+        console.error('Login Error:', err);
+        return res.status(500).json({ 
+            message: 'An internal server error occurred.'
+        });
     }
 });
 

@@ -1,12 +1,37 @@
 import express from 'express';
 import pool from '../config/db.js'; 
+import rateLimit from 'express-rate-limit';
+import { body, param, query, validationResult } from 'express-validator';
+import { authenticateAdmin } from '../middleware/auth.js';
 
 const router = express.Router();
 
+// Rate limiting
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100 // limit each IP to 100 requests per windowMs
+});
 
+router.use(apiLimiter);
+router.use(authenticateAdmin);
+
+// Validation middleware
+const validateRequest = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({ errors: errors.array() });
+  }
+  next();
+};
+
+// Add money validation
+const addMoneyValidation = [
+  body('cust_id').isInt().notEmpty(),
+  body('amount').isFloat({ min: 0.01 }).notEmpty()
+];
 
 // Admin-only route to add money to a user's account
-router.post('/add-money', async (req, res) => 
+router.post('/add-money', addMoneyValidation, validateRequest, async (req, res) => 
 {
   const { cust_id, amount } = req.body;
   console.log('Incoming add money request:', { cust_id, amount }); // Debug 
@@ -47,15 +72,35 @@ router.post('/add-money', async (req, res) =>
   }
 });
 
+// Pagination middleware
+const paginationValidation = [
+  query('page').optional().isInt({ min: 1 }),
+  query('limit').optional().isInt({ min: 1, max: 100 })
+];
+
 // Admin-only route to fetch all transactions
-router.get('/transactions', async (req, res) => 
+router.get('/transactions', paginationValidation, validateRequest, async (req, res) => 
   {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
 
   try {
-    const transactions = await pool.query(
-      'SELECT * FROM Transactions ORDER BY date_time DESC'
-    );
-    res.json(transactions.rows);
+    const [transactions, countResult] = await Promise.all([
+      pool.query(
+        'SELECT * FROM Transactions ORDER BY date_time DESC LIMIT $1 OFFSET $2',
+        [limit, offset]
+      ),
+      pool.query('SELECT COUNT(*) FROM Transactions')
+    ]);
+
+    res.json({
+      data: transactions.rows,
+      page,
+      limit,
+      total: parseInt(countResult.rows[0].count),
+      totalPages: Math.ceil(countResult.rows[0].count / limit)
+    });
   } catch (err) {
     console.error('Error fetching transactions:', err.message);
     res.status(500).json({ error: 'Failed to fetch transactions' });
@@ -74,8 +119,15 @@ router.get('/customers', async (req, res) =>
   }
 });
 
+// Product validation
+const productValidation = [
+  body('product_name').trim().isLength({ min: 1, max: 255 }),
+  body('description').optional().trim(),
+  body('base_price').isFloat({ min: 0.01 })
+];
+
 // Admin-only Route to add a product
-router.post('/add-product', async (req, res) => 
+router.post('/add-product', productValidation, validateRequest, async (req, res) => 
 {
   const { product_name, description, base_price } = req.body;
 
@@ -116,24 +168,39 @@ router.get('/products', async (req, res) => {
   }
 });
 
-// Admin route to fetch all inventories (use of joins and order by)
-router.get('/inventories', async (req, res) => {
+// Optimized inventory query with pagination
+router.get('/inventories', paginationValidation, validateRequest, async (req, res) => {
+  const page = parseInt(req.query.page) || 1;
+  const limit = parseInt(req.query.limit) || 10;
+  const offset = (page - 1) * limit;
+
   try {
-    const inventories = await pool.query(`
-      SELECT 
-        i.inventory_id, 
-        i.supplier_id, 
-        c.f_name AS supplier_first_name, 
-        c.l_name AS supplier_last_name,
-        p.product_name, 
-        i.quantity, 
-        i.price
-      FROM Inventory i
-      JOIN Customers c ON i.supplier_id = c.cust_id
-      JOIN Products p ON i.product_id = p.product_id
-      ORDER BY i.inventory_id DESC
-    `);
-    res.json(inventories.rows);
+    const [inventories, countResult] = await Promise.all([
+      pool.query(`
+        SELECT 
+          i.inventory_id, 
+          i.supplier_id, 
+          c.f_name AS supplier_first_name, 
+          c.l_name AS supplier_last_name,
+          p.product_name, 
+          i.quantity, 
+          i.price
+        FROM Inventory i
+        JOIN Customers c ON i.supplier_id = c.cust_id
+        JOIN Products p ON i.product_id = p.product_id
+        ORDER BY i.inventory_id DESC
+        LIMIT $1 OFFSET $2
+      `, [limit, offset]),
+      pool.query('SELECT COUNT(*) FROM Inventory')
+    ]);
+
+    res.json({
+      data: inventories.rows,
+      page,
+      limit,
+      total: parseInt(countResult.rows[0].count),
+      totalPages: Math.ceil(countResult.rows[0].count / limit)
+    });
   } catch (err) {
     console.error('Error fetching inventories:', err.message);
     res.status(500).json({ error: 'Failed to fetch inventories' });
@@ -243,9 +310,14 @@ router.delete('/products/:product_id', async (req, res) => {
   }
 });
 
+// Product update validation
+const productUpdateValidation = [
+  param('product_id').isInt(),
+  ...productValidation
+];
 
 // Admin-only route to update a product
-router.put('/products/:product_id', async (req, res) => {
+router.put('/products/:product_id', productUpdateValidation, validateRequest, async (req, res) => {
   const { product_id } = req.params;
   const { product_name, description, base_price } = req.body;
 
@@ -286,6 +358,15 @@ router.put('/products/:product_id', async (req, res) => {
     console.error('Error updating product:', err.message);
     res.status(500).json({ message: 'Failed to update product' });
   }
+});
+
+// Error handling middleware
+router.use((err, req, res, next) => {
+  console.error(err.stack);
+  res.status(500).json({
+    error: 'Internal server error',
+    message: process.env.NODE_ENV === 'development' ? err.message : undefined
+  });
 });
 
 export default router;
